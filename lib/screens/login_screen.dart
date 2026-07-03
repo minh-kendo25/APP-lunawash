@@ -73,11 +73,12 @@ class _LoginScreenState extends State<LoginScreen> {
       _isLoading = true;
     });
     try {
-      final String clientId = '897520379970-6qi5jkhmqgnmsisintk6gopj0mi1a6sm.apps.googleusercontent.com';
+      final String webClientId = '897520379970-6qi5jkhmqgnmsisintk6gopj0mi1a6sm.apps.googleusercontent.com';
+      final String iosClientId = '897520379970-cr9sbevfickpq9cma9nljok1kdpfbsa1.apps.googleusercontent.com';
       
       final GoogleSignIn googleSignIn = GoogleSignIn(
-        clientId: kIsWeb ? clientId : null, 
-        serverClientId: clientId,
+        clientId: kIsWeb ? webClientId : (Platform.isIOS ? iosClientId : null), 
+        serverClientId: webClientId,
       );
       await googleSignIn.signOut();
       GoogleSignInAccount? account = await googleSignIn.signIn();
