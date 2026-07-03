@@ -50,7 +50,24 @@ class _MainLayoutState extends State<MainLayout> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(_getAppBarTitle(), style: const TextStyle(fontWeight: FontWeight.bold)),
+        title: _currentIndex == 0
+            ? Row(
+                children: [
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(8),
+                    child: Image.network(
+                      'https://lh3.googleusercontent.com/aida-public/AB6AXuBMIHwZp8RLc19nD4KtDTiu2Q4Nfx7irfa6j_R-1Cel5RXbphsnQnvgVnZk42WxpmbzInAHYM11SRsJDI2Vp8k74kreh2jUhGvsm0YkwUKn4m2KbN1qy9siwvSSQUGmk6arV6AcHgzQ2o8l26YiRZdItVWCMkAPPqZORnpv3MSrKdX0mbqFdWa2CiA65ioUN4VlN0bi3leO-qXk8jgudqm56MsW4gVgQXOkH-PScpiJ2aQItKCWjdLS77HETiuOPKOmywUITMCVN9g',
+                      height: 32,
+                      width: 32,
+                      fit: BoxFit.contain,
+                      errorBuilder: (context, error, stackTrace) => const Icon(Icons.water_drop, color: Color(0xFF0F2050)),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  const Text('LunaWash', style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF0F2050), fontSize: 20)),
+                ],
+              )
+            : Text(_getAppBarTitle(), style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF0F2050))),
         actions: [
           IconButton(
             icon: const Icon(Icons.notifications_none),
