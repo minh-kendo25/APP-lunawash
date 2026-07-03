@@ -28,7 +28,7 @@ class _HomeScreenState extends State<HomeScreen> {
     try {
       final services = await ApiService.fetchServices();
       setState(() {
-        _mainPackages = services.where((s) => s['serviceType'] == 'Main').toList();
+        _mainPackages = services.where((s) => s['serviceType'] == 'Package').toList();
         _isLoading = false;
       });
     } catch (e) {
@@ -266,18 +266,9 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                   ),
 
-            const SizedBox(height: 100), // Không gian cho nút FAB
+            const SizedBox(height: 20), // Không gian đệm dưới cùng
           ],
         ),
-      ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () {
-          widget.onNavigate?.call(1);
-        },
-        backgroundColor: const Color(0xFF0F2050),
-        foregroundColor: const Color(0xFF4EE1F1),
-        icon: const Icon(Icons.add),
-        label: const Text('Đặt lịch mới', style: TextStyle(fontWeight: FontWeight.bold)),
       ),
     );
   }
