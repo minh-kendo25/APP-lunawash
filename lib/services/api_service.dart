@@ -7,12 +7,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 class ApiService {
   // Tự động nhận diện nền tảng để trỏ đúng IP của Backend
   static String get baseUrl {
-    // Dùng LocalHost để test các fix mới nhất
-    if (kIsWeb) return 'http://127.0.0.1:5010/api';
-    if (Platform.isAndroid) return 'http://10.0.2.2:5010/api';
-    return 'http://127.0.0.1:5010/api';
-    
-    // return 'https://lunawash-be.onrender.com/api';
+    // Dùng Render Backend cho Production
+    return 'https://lunawash-be.onrender.com/api';
   }
 
   static Future<List<dynamic>> fetchServices() async {

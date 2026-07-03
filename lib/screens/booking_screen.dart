@@ -406,9 +406,11 @@ class _BookingScreenState extends State<BookingScreen> {
                   else
                     ..._mainPackages.map((pkg) {
                       String priceStr = 'N/A';
+                      int pts = 0;
                       try {
                         var sp = (pkg['prices'] as List).firstWhere((p) => p['vehicleTypeId'] == selectedVehicleTypeId);
                         priceStr = formatCurrency(sp['price'].toInt());
+                        pts = sp['pointsRewarded'] ?? 0;
                       } catch(e) {}
                       return Padding(
                         padding: const EdgeInsets.only(bottom: 12),
@@ -416,6 +418,7 @@ class _BookingScreenState extends State<BookingScreen> {
                           pkg['serviceName'] ?? 'Dịch vụ', 
                           pkg['description'] ?? '', 
                           priceStr, 
+                          pts,
                           _selectedMainServiceId == pkg['id'], 
                           () => setState(() {
                             _selectedMainServiceId = pkg['id']?.toString() ?? '';
@@ -492,9 +495,11 @@ class _BookingScreenState extends State<BookingScreen> {
                   else
                     ..._addOnServices.map((addOn) {
                       String priceStr = 'N/A';
+                      int pts = 0;
                       try {
                         var sp = (addOn['prices'] as List).firstWhere((p) => p['vehicleTypeId'] == selectedVehicleTypeId);
                         priceStr = formatCurrency(sp['price'].toInt());
+                        pts = sp['pointsRewarded'] ?? 0;
                       } catch(e) {}
                       bool isSelected = _selectedAddOnIds.contains(addOn['id']);
                       return Padding(
@@ -502,6 +507,7 @@ class _BookingScreenState extends State<BookingScreen> {
                         child: _buildAddOnCard(
                           addOn['serviceName'] ?? 'Dịch vụ thêm', 
                           priceStr, 
+                          pts,
                           isSelected, 
                           () => setState(() {
                             if (isSelected) _selectedAddOnIds.remove(addOn['id']?.toString() ?? '');
@@ -1285,7 +1291,7 @@ class _BookingScreenState extends State<BookingScreen> {
                             }
                             
                             if (url != null) {
-                              await launchUrl(Uri.parse(url), mode: LaunchMode.inAppWebView);
+                              await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
                               if (context.mounted) {
                                 showDialog(
                                   context: context,
@@ -1418,7 +1424,7 @@ class _BookingScreenState extends State<BookingScreen> {
     );
   }
 
-  Widget _buildAddOnCard(String title, String price, bool isSelected, VoidCallback onTap) {
+  Widget _buildAddOnCard(String title, String price, int pointsRewarded, bool isSelected, VoidCallback onTap) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -1436,7 +1442,29 @@ class _BookingScreenState extends State<BookingScreen> {
               children: [
                 Icon(Icons.add_circle, color: isSelected ? Colors.blue : Colors.grey, size: 24),
                 const SizedBox(width: 12),
-                Text(title, style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: isSelected ? Colors.blue.shade700 : Colors.black87)),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(title, style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: isSelected ? Colors.blue.shade700 : Colors.black87)),
+                    if (pointsRewarded > 0) ...[
+                      const SizedBox(height: 4),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: Colors.amber.shade100,
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(Icons.star, color: Colors.orange, size: 10),
+                            const SizedBox(width: 2),
+                            Text('+$pointsRewarded', style: const TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: Colors.orange)),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
               ],
             ),
             Text(price, style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: isSelected ? Colors.blue : Colors.black87)),
@@ -1446,7 +1474,7 @@ class _BookingScreenState extends State<BookingScreen> {
     );
   }
 
-  Widget _buildMainServiceCard(String title, String desc, String price, bool isSelected, VoidCallback onTap) {
+  Widget _buildMainServiceCard(String title, String desc, String price, int pointsRewarded, bool isSelected, VoidCallback onTap) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -1475,7 +1503,28 @@ class _BookingScreenState extends State<BookingScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(title, style: TextStyle(fontWeight: FontWeight.bold, color: isSelected ? Colors.white : Colors.black)),
+                  Row(
+                    children: [
+                      Text(title, style: TextStyle(fontWeight: FontWeight.bold, color: isSelected ? Colors.white : Colors.black)),
+                      if (pointsRewarded > 0) ...[
+                        const SizedBox(width: 6),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: Colors.amber.shade100,
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: Row(
+                            children: [
+                              const Icon(Icons.star, color: Colors.orange, size: 10),
+                              const SizedBox(width: 2),
+                              Text('+$pointsRewarded', style: const TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: Colors.orange)),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
                   const SizedBox(height: 4),
                   Text(desc, style: TextStyle(fontSize: 11, color: isSelected ? Colors.white70 : Colors.black54)),
                 ],
