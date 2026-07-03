@@ -12,6 +12,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
   bool _isLoading = true;
   List<dynamic> _ongoingBookings = [];
   List<dynamic> _pastBookings = [];
+  int _displayedPastCount = 5;
 
   @override
   void initState() {
@@ -54,11 +55,11 @@ class _HistoryScreenState extends State<HistoryScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // Đang diễn ra
-                  if (_ongoingBookings.isNotEmpty) ...[
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        const Text('ĐANG DIỄN RA', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.black54)),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text('ĐANG DIỄN RA', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.black54)),
+                      if (_ongoingBookings.isNotEmpty)
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                           decoration: BoxDecoration(
@@ -67,12 +68,25 @@ class _HistoryScreenState extends State<HistoryScreen> {
                           ),
                           child: Text('${_ongoingBookings.length} BOOKING', style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold)),
                         ),
-                      ],
-                    ),
-                    const SizedBox(height: 12),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  if (_ongoingBookings.isEmpty)
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(vertical: 24),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Colors.grey.shade200),
+                      ),
+                      child: const Center(
+                        child: Text('Không có lịch đặt nào đang diễn ra', style: TextStyle(color: Colors.black54, fontSize: 13)),
+                      ),
+                    )
+                  else
                     ..._ongoingBookings.map((b) => _buildOngoingCard(b)).toList(),
-                    const SizedBox(height: 32),
-                  ],
+                  const SizedBox(height: 32),
                   
                   // Lịch sử trước đó
                   Row(
@@ -84,15 +98,15 @@ class _HistoryScreenState extends State<HistoryScreen> {
                   ),
                   const SizedBox(height: 12),
                   
-                  if (_pastBookings.isEmpty && _ongoingBookings.isEmpty)
+                  if (_pastBookings.isEmpty)
                     const Padding(
                       padding: EdgeInsets.symmetric(vertical: 24),
                       child: Center(
-                        child: Text('Bạn chưa có lịch đặt nào.', style: TextStyle(fontSize: 14, color: Colors.black54)),
+                        child: Text('Bạn chưa có lịch sử dịch vụ.', style: TextStyle(fontSize: 14, color: Colors.black54)),
                       ),
                     )
                   else ...[
-                    ..._pastBookings.map((b) {
+                    ..._pastBookings.take(_displayedPastCount).map((b) {
                       final title = b['packageName'] ?? b['services'] ?? 'Dịch vụ rửa xe';
                       final car = b['vehicleInfo'] ?? '';
                       final date = b['bookingDate']?.toString().substring(0, 10) ?? '';
@@ -106,12 +120,27 @@ class _HistoryScreenState extends State<HistoryScreen> {
                       return _buildHistoryCard(context, title, car, date, price, status, color, Icons.cleaning_services_outlined, branch: branch, time: time, isCancelled: isCancelled, bookingId: bookingId);
                     }).toList(),
                     
-                    const Padding(
-                      padding: EdgeInsets.symmetric(vertical: 24),
-                      child: Center(
-                        child: Text('Bạn đã xem hết lịch sử dịch vụ.', style: TextStyle(fontSize: 12, color: Colors.black54)),
+                    if (_pastBookings.length > _displayedPastCount)
+                      Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        child: Center(
+                          child: TextButton(
+                            onPressed: () {
+                              setState(() {
+                                _displayedPastCount += 5;
+                              });
+                            },
+                            child: const Text('Hiển thị thêm', style: TextStyle(color: Color(0xFF0F2050), fontWeight: FontWeight.bold)),
+                          ),
+                        ),
+                      )
+                    else
+                      const Padding(
+                        padding: EdgeInsets.symmetric(vertical: 24),
+                        child: Center(
+                          child: Text('Bạn đã xem hết lịch sử dịch vụ.', style: TextStyle(fontSize: 12, color: Colors.black54)),
+                        ),
                       ),
-                    ),
                   ]
                 ],
               ),
