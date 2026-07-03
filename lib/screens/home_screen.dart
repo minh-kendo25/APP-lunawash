@@ -234,7 +234,7 @@ class _HomeScreenState extends State<HomeScreen> {
             _isLoading 
                 ? const Center(child: Padding(padding: EdgeInsets.all(20), child: CircularProgressIndicator()))
                 : SizedBox(
-                    height: 360,
+                    height: 260,
                     child: ListView.builder(
                       scrollDirection: Axis.horizontal,
                       padding: const EdgeInsets.symmetric(horizontal: 12),
@@ -326,7 +326,7 @@ class _HomeScreenState extends State<HomeScreen> {
     required VoidCallback onTap,
   }) {
     return Container(
-      width: 280,
+      width: 200,
       margin: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
       decoration: BoxDecoration(
         color: Colors.white,
@@ -345,58 +345,58 @@ class _HomeScreenState extends State<HomeScreen> {
         child: Stack(
           children: [
             Padding(
-              padding: const EdgeInsets.all(20.0),
+              padding: const EdgeInsets.all(12.0),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Icon(
                     title.toLowerCase().contains('cao cấp') ? Icons.diamond : (title.toLowerCase().contains('nâng cao') ? Icons.waves : Icons.water_drop),
                     color: const Color(0xFF0F2050),
-                    size: 32,
+                    size: 24,
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 8),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Expanded(
                         child: Text(
                           title,
-                          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF0F2050)),
+                          style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Color(0xFF0F2050)),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
                       ),
                       Text(
                         duration,
-                        style: const TextStyle(fontSize: 12, color: Colors.black54),
+                        style: const TextStyle(fontSize: 11, color: Colors.black54),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 4),
                   Text(
                     description,
-                    style: const TextStyle(fontSize: 13, color: Colors.black54),
-                    maxLines: 2,
+                    style: const TextStyle(fontSize: 11, color: Colors.black54),
+                    maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
-                  const SizedBox(height: 16),
-                  const Divider(),
                   const SizedBox(height: 8),
+                  const Divider(),
+                  const SizedBox(height: 4),
                   Expanded(
                     child: ListView.builder(
                       physics: const NeverScrollableScrollPhysics(),
-                      itemCount: features.length > 3 ? 3 : features.length, // Show max 3 features to fit
+                      itemCount: features.length > 2 ? 2 : features.length, // Show max 2 features to fit
                       itemBuilder: (context, idx) {
                         return Padding(
-                          padding: const EdgeInsets.only(bottom: 8.0),
+                          padding: const EdgeInsets.only(bottom: 4.0),
                           child: Row(
                             children: [
-                              const Icon(Icons.check_circle_outline, color: Colors.green, size: 16),
-                              const SizedBox(width: 8),
+                              const Icon(Icons.check_circle_outline, color: Colors.green, size: 14),
+                              const SizedBox(width: 6),
                               Expanded(
                                 child: Text(
                                   features[idx]['featureText'] ?? '',
-                                  style: const TextStyle(fontSize: 12, color: Colors.black87),
+                                  style: const TextStyle(fontSize: 11, color: Colors.black87),
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
                                 ),
@@ -407,14 +407,15 @@ class _HomeScreenState extends State<HomeScreen> {
                       },
                     ),
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 4),
                   Text(
                     _formatCurrency(price),
-                    style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Color(0xFF0F2050)),
+                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF0F2050)),
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 8),
                   SizedBox(
                     width: double.infinity,
+                    height: 36,
                     child: OutlinedButton(
                       onPressed: onTap,
                       style: OutlinedButton.styleFrom(
@@ -422,8 +423,9 @@ class _HomeScreenState extends State<HomeScreen> {
                         backgroundColor: isPopular ? const Color(0xFF0F2050) : Colors.transparent,
                         side: const BorderSide(color: Color(0xFF0F2050)),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                        padding: EdgeInsets.zero,
                       ),
-                      child: const Text('Chọn ngay'),
+                      child: const Text('Chọn ngay', style: TextStyle(fontSize: 12)),
                     ),
                   ),
                 ],
