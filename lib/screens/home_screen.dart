@@ -1,12 +1,77 @@
 import 'package:flutter/material.dart';
-import 'profile_screen.dart';
-import 'login_screen.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:convert';
+import 'package:intl/intl.dart';
+import 'voucher_screen.dart';
 import '../services/api_service.dart';
 
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends StatefulWidget {
   final Function(int)? onNavigate;
   
   const HomeScreen({super.key, this.onNavigate});
+
+  @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  List<dynamic> _mainPackages = [];
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadServices();
+  }
+
+  Future<void> _loadServices() async {
+    try {
+      final services = await ApiService.fetchServices();
+      setState(() {
+        _mainPackages = services.where((s) => s['serviceType'] == 'Main').toList();
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
+
+  Future<void> _saveVoucher(Map<String, dynamic> voucherData) async {
+    final prefs = await SharedPreferences.getInstance();
+    List<String> savedVouchers = prefs.getStringList('saved_vouchers') ?? [];
+    
+    // Check if already saved
+    bool exists = savedVouchers.any((element) {
+      var map = json.decode(element);
+      return map['code'] == voucherData['code'];
+    });
+
+    if (exists) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Bạn đã lưu mã này rồi!')),
+      );
+      return;
+    }
+
+    savedVouchers.add(json.encode(voucherData));
+    await prefs.setStringList('saved_vouchers', savedVouchers);
+
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Lưu mã giảm giá thành công!'),
+        backgroundColor: Colors.green,
+      ),
+    );
+  }
+
+  String _formatCurrency(int amount) {
+    final format = NumberFormat.currency(locale: 'vi_VN', symbol: 'đ');
+    return format.format(amount);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -17,65 +82,99 @@ class HomeScreen extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Hero Banner
-            Container(
-              height: 240,
-              width: double.infinity,
-              decoration: const BoxDecoration(
-                color: Color(0xFF0F2050),
-                image: DecorationImage(
-                  // Ảnh placeholder ô tô
-                  image: NetworkImage('https://images.unsplash.com/photo-1601362840469-51e4d8d58785?auto=format&fit=crop&q=80'),
-                  fit: BoxFit.cover,
-                  colorFilter: ColorFilter.mode(Colors.black54, BlendMode.darken),
-                ),
-              ),
-              child: Padding(
-                padding: const EdgeInsets.all(20.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    const Text(
-                      'Trải nghiệm rửa xe công\nnghệ đỉnh cao',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 22,
-                        fontWeight: FontWeight.bold,
-                        height: 1.2,
-                      ),
+            Stack(
+              children: [
+                Container(
+                  height: 240,
+                  width: double.infinity,
+                  decoration: const BoxDecoration(
+                    color: Color(0xFF0F2050),
+                    image: DecorationImage(
+                      image: NetworkImage('https://images.unsplash.com/photo-1601362840469-51e4d8d58785?auto=format&fit=crop&q=80'),
+                      fit: BoxFit.cover,
+                      colorFilter: ColorFilter.mode(Colors.black54, BlendMode.darken),
                     ),
-                    const SizedBox(height: 8),
-                    const Text(
-                      'Chăm sóc xe chuyên nghiệp với hệ thống\ntự động và đội ngũ tận tâm.',
-                      style: TextStyle(
-                        color: Colors.white70,
-                        fontSize: 12,
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    ElevatedButton(
-                      onPressed: () {
-                        onNavigate?.call(1);
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF4EE1F1),
-                        foregroundColor: const Color(0xFF0F2050),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(20.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        const Text(
+                          'Trải nghiệm rửa xe công\nnghệ đỉnh cao',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 22,
+                            fontWeight: FontWeight.bold,
+                            height: 1.2,
+                          ),
                         ),
-                        elevation: 0,
-                      ),
-                      child: const Text('Đặt lịch ngay', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                        const SizedBox(height: 8),
+                        const Text(
+                          'Chăm sóc xe chuyên nghiệp với hệ thống\ntự động và đội ngũ tận tâm.',
+                          style: TextStyle(
+                            color: Colors.white70,
+                            fontSize: 12,
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        ElevatedButton(
+                          onPressed: () {
+                            widget.onNavigate?.call(1);
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF4EE1F1),
+                            foregroundColor: const Color(0xFF0F2050),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            elevation: 0,
+                          ),
+                          child: const Text('Đặt lịch ngay', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                        ),
+                      ],
                     ),
-                  ],
+                  ),
                 ),
-              ),
+                Positioned(
+                  top: 40,
+                  right: 16,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: Colors.black45,
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: IconButton(
+                      icon: const Icon(Icons.local_activity, color: Color(0xFF4EE1F1)),
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (context) => const VoucherScreen()),
+                        );
+                      },
+                      tooltip: 'Ví Mã Giảm Giá',
+                    ),
+                  ),
+                ),
+              ],
             ),
 
             // Ưu đãi đặc biệt
-            const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 16.0),
-              child: Text('Ưu đãi đặc biệt', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 16.0),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text('Ưu đãi đặc biệt', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                  TextButton(
+                    onPressed: () {
+                      Navigator.push(context, MaterialPageRoute(builder: (context) => const VoucherScreen()));
+                    }, 
+                    child: const Text('Ví Voucher', style: TextStyle(color: Color(0xFF0F2050), fontWeight: FontWeight.bold))
+                  )
+                ],
+              ),
             ),
             
             SizedBox(
@@ -84,18 +183,96 @@ class HomeScreen extends StatelessWidget {
                 scrollDirection: Axis.horizontal,
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 children: [
-                  _buildPromoCard('Giảm 20% lần đầu', 'Nhập mã: LUNANEW', const Color(0xFF0F2050)),
-                  _buildPromoCard('Thành viên mới', 'Đăng ký ngay', const Color(0xFF0F2050)),
+                  _buildPromoCard(
+                    title: 'Giảm 20% lần đầu', 
+                    subtitle: 'Nhập mã: LUNANEW', 
+                    bgColor: const Color(0xFF0F2050),
+                    voucherData: {
+                      'code': 'LUNANEW',
+                      'title': 'Giảm 20% lần đầu',
+                      'subtitle': 'Dành cho khách hàng mới',
+                      'discount': 20,
+                    }
+                  ),
+                  _buildPromoCard(
+                    title: 'Giảm 50K thứ 3', 
+                    subtitle: 'Nhập mã: TUESDAY50', 
+                    bgColor: const Color(0xFF0F2050),
+                    voucherData: {
+                      'code': 'TUESDAY50',
+                      'title': 'Giảm 50K thứ 3',
+                      'subtitle': 'Áp dụng cho ngày thứ 3 hàng tuần',
+                      'discountAmount': 50000,
+                    }
+                  ),
                 ],
               ),
             ),
+
+            // Các gói dịch vụ
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16.0, 24.0, 16.0, 16.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    decoration: const BoxDecoration(
+                      color: Color(0xFFE0F7FA),
+                      borderRadius: BorderRadius.all(Radius.circular(16)),
+                    ),
+                    child: const Text('DỊCH VỤ HÀNG ĐẦU', style: TextStyle(color: Color(0xFF0F2050), fontSize: 10, fontWeight: FontWeight.bold)),
+                  ),
+                  const SizedBox(height: 12),
+                  const Text('Chọn gói dịch vụ\nphù hợp', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Color(0xFF0F2050), height: 1.2)),
+                  const SizedBox(height: 12),
+                  const Text('Trải nghiệm công nghệ rửa xe thông minh nhanh chóng, chất lượng vượt trội tại LunaWash.', style: TextStyle(color: Colors.black54, fontSize: 13)),
+                ],
+              ),
+            ),
+
+            _isLoading 
+                ? const Center(child: Padding(padding: EdgeInsets.all(20), child: CircularProgressIndicator()))
+                : SizedBox(
+                    height: 360,
+                    child: ListView.builder(
+                      scrollDirection: Axis.horizontal,
+                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                      itemCount: _mainPackages.length,
+                      itemBuilder: (context, index) {
+                        final pkg = _mainPackages[index];
+                        // Tìm giá thấp nhất để hiển thị đại diện
+                        int displayPrice = 0;
+                        int displayDuration = 0;
+                        if (pkg['prices'] != null && (pkg['prices'] as List).isNotEmpty) {
+                          displayPrice = (pkg['prices'][0]['price'] as num).toInt();
+                          displayDuration = (pkg['prices'][0]['durationMinutes'] as num).toInt();
+                        }
+                        
+                        List<dynamic> features = pkg['features'] ?? [];
+                        
+                        return _buildServicePackageCard(
+                          title: pkg['serviceName'] ?? 'Gói dịch vụ',
+                          description: pkg['description'] ?? '',
+                          duration: '~$displayDuration phút',
+                          price: displayPrice,
+                          features: features,
+                          isPopular: pkg['isPopular'] == true,
+                          onTap: () {
+                            widget.onNavigate?.call(1); // Chuyển sang tab đặt lịch
+                          }
+                        );
+                      },
+                    ),
+                  ),
+
             const SizedBox(height: 100), // Không gian cho nút FAB
           ],
         ),
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () {
-          onNavigate?.call(1);
+          widget.onNavigate?.call(1);
         },
         backgroundColor: const Color(0xFF0F2050),
         foregroundColor: const Color(0xFF4EE1F1),
@@ -105,34 +282,175 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildPromoCard(String title, String subtitle, Color bgColor) {
-    return Container(
-      width: 240,
-      margin: const EdgeInsets.only(right: 12),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(16),
-        color: bgColor,
-        image: const DecorationImage(
-          image: NetworkImage('https://images.unsplash.com/photo-1552930294-6b595f4c2974?auto=format&fit=crop&q=80'),
-          fit: BoxFit.cover,
-          colorFilter: ColorFilter.mode(Colors.black45, BlendMode.darken),
+  Widget _buildPromoCard({required String title, required String subtitle, required Color bgColor, required Map<String, dynamic> voucherData}) {
+    return GestureDetector(
+      onTap: () => _saveVoucher(voucherData),
+      child: Container(
+        width: 240,
+        margin: const EdgeInsets.only(right: 12),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(16),
+          color: bgColor,
+          image: const DecorationImage(
+            image: NetworkImage('https://images.unsplash.com/photo-1552930294-6b595f4c2974?auto=format&fit=crop&q=80'),
+            fit: BoxFit.cover,
+            colorFilter: ColorFilter.mode(Colors.black45, BlendMode.darken),
+          ),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              Text(
+                title,
+                style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 4),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    subtitle,
+                    style: const TextStyle(color: Colors.white70, fontSize: 12),
+                  ),
+                  const Icon(Icons.download_rounded, color: Colors.white, size: 16),
+                ],
+              ),
+            ],
+          ),
         ),
       ),
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisAlignment: MainAxisAlignment.end,
+    );
+  }
+
+  Widget _buildServicePackageCard({
+    required String title,
+    required String description,
+    required String duration,
+    required int price,
+    required List<dynamic> features,
+    required bool isPopular,
+    required VoidCallback onTap,
+  }) {
+    return Container(
+      width: 280,
+      margin: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: isPopular ? const Color(0xFF0F2050) : Colors.grey.shade200, width: isPopular ? 2 : 1),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(14),
+        child: Stack(
           children: [
-            Text(
-              title,
-              style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+            Padding(
+              padding: const EdgeInsets.all(20.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Icon(
+                    title.toLowerCase().contains('cao cấp') ? Icons.diamond : (title.toLowerCase().contains('nâng cao') ? Icons.waves : Icons.water_drop),
+                    color: const Color(0xFF0F2050),
+                    size: 32,
+                  ),
+                  const SizedBox(height: 16),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Expanded(
+                        child: Text(
+                          title,
+                          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF0F2050)),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      Text(
+                        duration,
+                        style: const TextStyle(fontSize: 12, color: Colors.black54),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    description,
+                    style: const TextStyle(fontSize: 13, color: Colors.black54),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 16),
+                  const Divider(),
+                  const SizedBox(height: 8),
+                  Expanded(
+                    child: ListView.builder(
+                      physics: const NeverScrollableScrollPhysics(),
+                      itemCount: features.length > 3 ? 3 : features.length, // Show max 3 features to fit
+                      itemBuilder: (context, idx) {
+                        return Padding(
+                          padding: const EdgeInsets.only(bottom: 8.0),
+                          child: Row(
+                            children: [
+                              const Icon(Icons.check_circle_outline, color: Colors.green, size: 16),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  features[idx]['featureText'] ?? '',
+                                  style: const TextStyle(fontSize: 12, color: Colors.black87),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    _formatCurrency(price),
+                    style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Color(0xFF0F2050)),
+                  ),
+                  const SizedBox(height: 16),
+                  SizedBox(
+                    width: double.infinity,
+                    child: OutlinedButton(
+                      onPressed: onTap,
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: isPopular ? Colors.white : const Color(0xFF0F2050),
+                        backgroundColor: isPopular ? const Color(0xFF0F2050) : Colors.transparent,
+                        side: const BorderSide(color: Color(0xFF0F2050)),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                      ),
+                      child: const Text('Chọn ngay'),
+                    ),
+                  ),
+                ],
+              ),
             ),
-            const SizedBox(height: 4),
-            Text(
-              subtitle,
-              style: const TextStyle(color: Colors.white70, fontSize: 12),
-            ),
+            if (isPopular)
+              Positioned(
+                top: 0,
+                right: 0,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  decoration: const BoxDecoration(
+                    color: Color(0xFF0F2050),
+                    borderRadius: BorderRadius.only(bottomLeft: Radius.circular(14)),
+                  ),
+                  child: const Text('PHỔ BIẾN', style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold)),
+                ),
+              ),
           ],
         ),
       ),

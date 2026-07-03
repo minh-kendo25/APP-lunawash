@@ -210,7 +210,45 @@ class _HistoryScreenState extends State<HistoryScreen> {
             SizedBox(
               width: double.infinity,
               child: OutlinedButton.icon(
-                onPressed: () {},
+                onPressed: () {
+                  showDialog(
+                    context: context,
+                    builder: (BuildContext ctx) {
+                      return AlertDialog(
+                        title: const Text('Hủy lịch đặt', style: TextStyle(color: Color(0xFF0F2050))),
+                        content: const Text('Bạn có chắc chắn muốn hủy lịch đặt này không? Hành động này không thể hoàn tác.'),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.pop(ctx),
+                            child: const Text('Không', style: TextStyle(color: Colors.grey)),
+                          ),
+                          ElevatedButton(
+                            onPressed: () async {
+                              Navigator.pop(ctx);
+                              showDialog(
+                                context: context,
+                                barrierDismissible: false,
+                                builder: (c) => const Center(child: CircularProgressIndicator()),
+                              );
+                              final success = await ApiService.cancelBooking(booking['id'].toString());
+                              if (context.mounted) {
+                                Navigator.pop(context); // Tắt loading
+                                if (success) {
+                                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Đã hủy lịch đặt thành công'), backgroundColor: Colors.teal));
+                                  _loadHistory();
+                                } else {
+                                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Hủy lịch thất bại. Vui lòng thử lại!'), backgroundColor: Colors.red));
+                                }
+                              }
+                            },
+                            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+                            child: const Text('Có, Hủy', style: TextStyle(color: Colors.white)),
+                          ),
+                        ],
+                      );
+                    },
+                  );
+                },
                 icon: const Icon(Icons.cancel_outlined, color: Colors.red),
                 label: const Text('Hủy lịch đặt', style: TextStyle(color: Colors.red)),
                 style: OutlinedButton.styleFrom(

@@ -38,7 +38,7 @@ class LunaWashApp extends StatelessWidget {
               body: Center(child: CircularProgressIndicator(color: Color(0xFF4EE1F1))),
             );
           }
-          final token = snapshot.data?.getString('auth_token');
+          final token = snapshot.data?.getString('jwt_token');
           if (token != null && token.isNotEmpty) {
             return const MainLayout();
           }

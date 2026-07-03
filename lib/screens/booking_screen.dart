@@ -1,4 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
+import 'dart:convert';
+import 'dart:async';
+import 'package:url_launcher/url_launcher.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'main_layout.dart';
 import '../services/api_service.dart';
 
@@ -23,6 +28,7 @@ class _BookingScreenState extends State<BookingScreen> {
   int _selectedSavedVehicleIndex = 0;
   int _selectedVehicleIndex = 1;
   String _paymentMethod = 'vnpay';
+  Map<String, dynamic>? _selectedVoucher;
 
   Set<int> _occupiedSlots = {};
   bool _isLoadingSlots = false;
@@ -76,7 +82,7 @@ class _BookingScreenState extends State<BookingScreen> {
     if (!mounted) return;
     setState(() => _isLoadingSlots = true);
     
-    final branchIds = ['BRN-LD-01', 'BRN-TTH-01', 'BRN-Q1-01', 'BRN-Q7-01', 'BRN-TB-01'];
+    final branchIds = ['BRN-LD-01', 'BRN-Q1-01', 'BRN-Q7-01', 'BRN-TB-01', 'BRN-TTH-01'];
     final branchId = branchIds[_selectedBranchIndex];
     final washSlotId = '$branchId-WS-0${_selectedStationIndex + 1}';
     final dateStr = '${_selectedDate.year}-${_selectedDate.month.toString().padLeft(2, '0')}-${_selectedDate.day.toString().padLeft(2, '0')}';
@@ -770,7 +776,7 @@ class _BookingScreenState extends State<BookingScreen> {
     );
   }
 
-  void _showPaymentSummaryPopup(int requiredSlots, int totalPrice) {
+  void _showPaymentSummaryPopup(int requiredSlots, int originalTotalPrice) {
     if (_selectedTimeSlotIndex == -1) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Vui lòng chọn khung giờ trước khi thanh toán')),
@@ -778,7 +784,17 @@ class _BookingScreenState extends State<BookingScreen> {
       return;
     }
 
-    String formattedTotal = '${totalPrice.toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]}.')} đ';
+    String formatCurrency(int amount) {
+      String s = amount.toString();
+      String res = '';
+      for (int i = 0; i < s.length; i++) {
+        res += s[i];
+        if ((s.length - i - 1) % 3 == 0 && i != s.length - 1) {
+          res += '.';
+        }
+      }
+      return res + 'đ';
+    }
     
     String branchName = _getBranchName(_selectedBranchIndex);
     String stationName = 'Trạm ${_selectedStationIndex + 1}';
@@ -841,16 +857,6 @@ class _BookingScreenState extends State<BookingScreen> {
                   const Divider(color: Colors.white24),
                   const SizedBox(height: 12),
                   
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      const Text('Tổng tiền dịch vụ', style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.bold)),
-                      Text(formattedTotal, style: const TextStyle(color: Color(0xFF4EE1F1), fontSize: 24, fontWeight: FontWeight.bold)),
-                    ],
-                  ),
-                  
-                  const SizedBox(height: 12),
                   const Divider(color: Colors.white24),
                   const SizedBox(height: 12),
                   
@@ -903,52 +909,150 @@ class _BookingScreenState extends State<BookingScreen> {
                     children: [
                       const Text('MÃ GIẢM GIÁ', style: TextStyle(color: Colors.white54, fontSize: 12, fontWeight: FontWeight.bold)),
                       GestureDetector(
-                        onTap: () {},
+                        onTap: () async {
+                          final prefs = await SharedPreferences.getInstance();
+                          final savedVouchersStr = prefs.getStringList('saved_vouchers') ?? [];
+                          final savedVouchers = savedVouchersStr.map((e) => json.decode(e) as Map<String, dynamic>).toList();
+                          
+                          if (!mounted) return;
+                          showModalBottomSheet(
+                            context: context,
+                            backgroundColor: Colors.white,
+                            shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+                            builder: (ctx) {
+                              return SafeArea(
+                                child: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    const Padding(
+                                      padding: EdgeInsets.all(16),
+                                      child: Text('Chọn mã giảm giá', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF0F2050))),
+                                    ),
+                                    if (savedVouchers.isEmpty)
+                                      const Padding(
+                                        padding: EdgeInsets.all(32),
+                                        child: Text('Chưa có mã giảm giá nào được lưu.'),
+                                      )
+                                    else
+                                      Flexible(
+                                        child: ListView.builder(
+                                          shrinkWrap: true,
+                                          itemCount: savedVouchers.length,
+                                          itemBuilder: (ctx, index) {
+                                            final v = savedVouchers[index];
+                                            return ListTile(
+                                              leading: const Icon(Icons.percent, color: Color(0xFF4EE1F1)),
+                                              title: Text(v['title'] ?? ''),
+                                              subtitle: Text(v['code'] ?? ''),
+                                              onTap: () {
+                                                setModalState(() {
+                                                  _selectedVoucher = v;
+                                                });
+                                                Navigator.pop(ctx);
+                                              },
+                                            );
+                                          }
+                                        ),
+                                      ),
+                                    if (_selectedVoucher != null)
+                                      TextButton(
+                                        onPressed: () {
+                                          setModalState(() {
+                                            _selectedVoucher = null;
+                                          });
+                                          Navigator.pop(ctx);
+                                        }, 
+                                        child: const Text('Bỏ chọn mã giảm giá', style: TextStyle(color: Colors.red)),
+                                      ),
+                                  ],
+                                ),
+                              );
+                            }
+                          );
+                        },
                         child: const Row(
                           children: [
                             Icon(Icons.local_activity, color: Color(0xFF4EE1F1), size: 14),
                             SizedBox(width: 4),
-                            Text('Xem thêm mã giảm giá', style: TextStyle(color: Color(0xFF4EE1F1), fontSize: 12)),
+                            Text('Chọn mã giảm giá đã lưu', style: TextStyle(color: Color(0xFF4EE1F1), fontSize: 12)),
                           ],
                         ),
                       ),
                     ],
                   ),
                   const SizedBox(height: 8),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Container(
-                          height: 44,
-                          decoration: BoxDecoration(
-                            color: Colors.transparent,
-                            borderRadius: BorderRadius.circular(8),
-                            border: Border.all(color: Colors.white24),
+                  if (_selectedVoucher != null)
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF4EE1F1).withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: const Color(0xFF4EE1F1)),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Row(
+                            children: [
+                              const Icon(Icons.check_circle, color: Color(0xFF4EE1F1), size: 20),
+                              const SizedBox(width: 8),
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(_selectedVoucher!['code'] ?? '', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                                  Text(_selectedVoucher!['title'] ?? '', style: const TextStyle(color: Colors.white70, fontSize: 12)),
+                                ],
+                              ),
+                            ],
                           ),
-                          child: const TextField(
-                            style: TextStyle(color: Colors.white),
-                            decoration: InputDecoration(
-                              hintText: 'Nhập mã giảm giá...',
-                              hintStyle: TextStyle(color: Colors.white38, fontSize: 14),
-                              border: InputBorder.none,
-                              contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                          IconButton(
+                            icon: const Icon(Icons.close, color: Colors.white54, size: 20),
+                            padding: EdgeInsets.zero,
+                            constraints: const BoxConstraints(),
+                            onPressed: () {
+                              setModalState(() {
+                                _selectedVoucher = null;
+                              });
+                            },
+                          ),
+                        ],
+                      ),
+                    )
+                  else
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Container(
+                            height: 44,
+                            decoration: BoxDecoration(
+                              color: Colors.transparent,
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(color: Colors.white24),
+                            ),
+                            child: const TextField(
+                              style: TextStyle(color: Colors.white),
+                              decoration: InputDecoration(
+                                hintText: 'Nhập mã giảm giá...',
+                                hintStyle: TextStyle(color: Colors.white38, fontSize: 14),
+                                border: InputBorder.none,
+                                contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                              ),
                             ),
                           ),
                         ),
-                      ),
-                      const SizedBox(width: 12),
-                      Container(
-                        height: 44,
-                        padding: const EdgeInsets.symmetric(horizontal: 20),
-                        alignment: Alignment.center,
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF4EE1F1),
-                          borderRadius: BorderRadius.circular(8),
+                        const SizedBox(width: 12),
+                        Container(
+                          height: 44,
+                          padding: const EdgeInsets.symmetric(horizontal: 20),
+                          alignment: Alignment.center,
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF4EE1F1),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: const Text('ÁP MÃ', style: TextStyle(color: Color(0xFF0F2050), fontWeight: FontWeight.bold)),
                         ),
-                        child: const Text('ÁP MÃ', style: TextStyle(color: Color(0xFF0F2050), fontWeight: FontWeight.bold)),
-                      ),
-                    ],
-                  ),
+                      ],
+                    ),
                   
                   const SizedBox(height: 24),
                   
@@ -1002,9 +1106,67 @@ class _BookingScreenState extends State<BookingScreen> {
                       ),
                     ],
                   ),
-                  
                   const SizedBox(height: 32),
                   
+                  // Total summary
+                  Builder(
+                    builder: (context) {
+                      int finalPrice = originalTotalPrice;
+                      int discountAmount = 0;
+                      
+                      if (_selectedVoucher != null) {
+                        if (_selectedVoucher!['discount'] != null) {
+                          int pct = (_selectedVoucher!['discount'] as num).toInt();
+                          discountAmount = (originalTotalPrice * pct / 100).round();
+                        } else if (_selectedVoucher!['discountAmount'] != null) {
+                          discountAmount = (_selectedVoucher!['discountAmount'] as num).toInt();
+                        }
+                        if (discountAmount > originalTotalPrice) discountAmount = originalTotalPrice;
+                        finalPrice = originalTotalPrice - discountAmount;
+                      }
+                      
+                      return Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.05),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Column(
+                          children: [
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                const Text('Tạm tính', style: TextStyle(color: Colors.white70)),
+                                Text(formatCurrency(originalTotalPrice), style: const TextStyle(color: Colors.white)),
+                              ],
+                            ),
+                            if (discountAmount > 0) ...[
+                              const SizedBox(height: 8),
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  const Text('Khuyến mãi', style: TextStyle(color: Colors.white70)),
+                                  Text('-${formatCurrency(discountAmount)}', style: const TextStyle(color: Color(0xFF4EE1F1))),
+                                ],
+                              ),
+                            ],
+                            const SizedBox(height: 12),
+                            const Divider(color: Colors.white24),
+                            const SizedBox(height: 12),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                const Text('Tổng cộng', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
+                                Text(formatCurrency(finalPrice), style: const TextStyle(color: Color(0xFF4EE1F1), fontWeight: FontWeight.bold, fontSize: 24)),
+                              ],
+                            ),
+                          ],
+                        ),
+                      );
+                    }
+                  ),
+                  
+                  const SizedBox(height: 32),
                   SizedBox(
                     width: double.infinity,
                     height: 54,
@@ -1013,7 +1175,7 @@ class _BookingScreenState extends State<BookingScreen> {
                         if (_selectedTimeSlotIndex == -1) return;
                         
                         // Prepare payload
-                        final branchIds = ['BRN-LD-01', 'BRN-TTH-01', 'BRN-Q1-01', 'BRN-Q7-01', 'BRN-TB-01'];
+                        final branchIds = ['BRN-LD-01', 'BRN-Q1-01', 'BRN-Q7-01', 'BRN-TB-01', 'BRN-TTH-01'];
                         final branchId = branchIds[_selectedBranchIndex];
                         final washSlotId = '$branchId-WS-0${_selectedStationIndex + 1}';
                         
@@ -1048,6 +1210,42 @@ class _BookingScreenState extends State<BookingScreen> {
                         int min = tm % 60;
                         DateTime startTime = DateTime(_selectedDate.year, _selectedDate.month, _selectedDate.day, hr, min);
                         
+                        int discountAmount = 0;
+                        if (_selectedVoucher != null) {
+                          if (_selectedVoucher!['discount'] != null) {
+                            int pct = (_selectedVoucher!['discount'] as num).toInt();
+                            discountAmount = (originalTotalPrice * pct / 100).round();
+                          } else if (_selectedVoucher!['discountAmount'] != null) {
+                            discountAmount = (_selectedVoucher!['discountAmount'] as num).toInt();
+                          }
+                          if (discountAmount > originalTotalPrice) discountAmount = originalTotalPrice;
+                        }
+                        int finalPrice = originalTotalPrice - discountAmount;
+
+                        String mainPackageName = "Dịch vụ rửa xe";
+                        if (_selectedMainServiceId.isNotEmpty) {
+                          try {
+                            mainPackageName = _mainPackages.firstWhere((p) => p['id'] == _selectedMainServiceId)['name'] ?? mainPackageName;
+                          } catch (e) {}
+                        }
+                        
+                        List<String> addOnNames = [];
+                        for (var addOnId in _selectedAddOnIds) {
+                          try {
+                            var addOn = _addOnServices.firstWhere((a) => a['id'] == addOnId);
+                            addOnNames.add(addOn['name']?.toString() ?? '');
+                          } catch (e) {}
+                        }
+                        
+                        final notesJson = json.encode({
+                          "packageName": mainPackageName,
+                          "services": addOnNames.join(', '),
+                          "totalPrice": finalPrice,
+                          "paymentMethod": _paymentMethod,
+                          "vehicleInfo": "${activeVeh['name'] ?? ''} • ${activeVeh['license'] ?? ''}",
+                          "message": "Đặt qua ứng dụng di động"
+                        });
+
                         final payload = {
                           "BranchId": branchId,
                           "WashSlotId": washSlotId,
@@ -1057,7 +1255,7 @@ class _BookingScreenState extends State<BookingScreen> {
                           "VehicleModel": activeVeh['name'] ?? '',
                           "ScheduledStartTime": startTime.toLocal().toIso8601String(),
                           "Duration": requiredSlots * 45,
-                          "Notes": "Đặt qua ứng dụng di động",
+                          "Notes": notesJson,
                           "ServicePriceIds": serviceIds
                         };
 
@@ -1074,35 +1272,69 @@ class _BookingScreenState extends State<BookingScreen> {
                         Navigator.pop(context); // Close summary popup
                         
                         if (res['success'] == true) {
-                          showDialog(
-                            context: context,
-                            builder: (BuildContext context) {
-                              return AlertDialog(
-                                backgroundColor: Colors.white,
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                                title: const Row(
-                                  children: [
-                                    Icon(Icons.check_circle, color: Colors.teal, size: 28),
-                                    SizedBox(width: 8),
-                                    Text('Thành công', style: TextStyle(color: Color(0xFF0F2050), fontWeight: FontWeight.bold)),
-                                  ],
-                                ),
-                                content: const Text('Bạn đã đặt lịch rửa xe thành công!'),
-                                actions: [
-                                  TextButton(
-                                    onPressed: () {
-                                      Navigator.pushAndRemoveUntil(
-                                        context,
-                                        MaterialPageRoute(builder: (context) => MainLayout(initialIndex: 1)),
-                                        (route) => false,
-                                      );
-                                    },
-                                    child: const Text('Xem lịch sử', style: TextStyle(color: Color(0xFF4EE1F1), fontWeight: FontWeight.bold)),
+                          if (_paymentMethod == 'vnpay' && res['data'] != null && res['data']['id'] != null) {
+                            String bookingId = res['data']['id'].toString();
+                            showDialog(
+                              context: context,
+                              barrierDismissible: false,
+                              builder: (c) => const Center(child: CircularProgressIndicator()),
+                            );
+                            String? url = await ApiService.getVnPayUrl(bookingId);
+                            if (context.mounted) {
+                              Navigator.pop(context); // Close loading
+                            }
+                            
+                            if (url != null) {
+                              await launchUrl(Uri.parse(url), mode: LaunchMode.inAppWebView);
+                              if (context.mounted) {
+                                showDialog(
+                                  context: context,
+                                  barrierDismissible: false,
+                                  builder: (BuildContext ctx) {
+                                    return PopScope(
+                                      canPop: false,
+                                      child: _VnPayDialog(bookingId: bookingId),
+                                    );
+                                  }
+                                );
+                              }
+                            } else {
+                              await ApiService.hardDeleteBooking(bookingId);
+                              if (context.mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Lỗi tạo link thanh toán, vui lòng thử lại!'), backgroundColor: Colors.red));
+                              }
+                            }
+                          } else {
+                            showDialog(
+                              context: context,
+                              builder: (BuildContext context) {
+                                return AlertDialog(
+                                  backgroundColor: Colors.white,
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                                  title: const Row(
+                                    children: [
+                                      Icon(Icons.check_circle, color: Colors.teal, size: 28),
+                                      SizedBox(width: 8),
+                                      Text('Thành công', style: TextStyle(color: Color(0xFF0F2050), fontWeight: FontWeight.bold)),
+                                    ],
                                   ),
-                                ],
-                              );
-                            },
-                          );
+                                  content: const Text('Bạn đã đặt lịch rửa xe thành công!'),
+                                  actions: [
+                                    TextButton(
+                                      onPressed: () {
+                                        Navigator.pushAndRemoveUntil(
+                                          context,
+                                          MaterialPageRoute(builder: (context) => const MainLayout(initialIndex: 1)),
+                                          (route) => false,
+                                        );
+                                      },
+                                      child: const Text('Xem lịch sử', style: TextStyle(color: Color(0xFF4EE1F1), fontWeight: FontWeight.bold)),
+                                    ),
+                                  ],
+                                );
+                              },
+                            );
+                          }
                         } else {
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(content: Text(res['error']?.toString() ?? 'Đã xảy ra lỗi khi đặt lịch')),
@@ -1444,7 +1676,6 @@ class _BookingScreenState extends State<BookingScreen> {
                     onTap: () {
                       setState(() {
                         _selectedSavedVehicleIndex = index;
-                        _selectedVehicleIndex = vehicle['typeIndex'];
                         _selectedTimeSlotIndex = -1;
                       });
                       Navigator.pop(context);
@@ -1465,6 +1696,87 @@ class _BookingScreenState extends State<BookingScreen> {
           ),
         );
       },
+    );
+  }
+}
+
+class _VnPayDialog extends StatefulWidget {
+  final String bookingId;
+  const _VnPayDialog({required this.bookingId});
+
+  @override
+  State<_VnPayDialog> createState() => _VnPayDialogState();
+}
+
+class _VnPayDialogState extends State<_VnPayDialog> {
+  Timer? _timer;
+  bool _isChecking = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _timer = Timer.periodic(const Duration(seconds: 3), (timer) async {
+      if (_isChecking) return;
+      _isChecking = true;
+      try {
+        final history = await ApiService.getBookingHistory();
+        final booking = history.firstWhere(
+          (b) => b['id'] == widget.bookingId,
+          orElse: () => null,
+        );
+        if (booking != null) {
+          final status = booking['status'];
+          if (status == 'Confirmed' || status == 'Paid') {
+            timer.cancel();
+            if (mounted) {
+              Navigator.pop(context);
+              Navigator.pushAndRemoveUntil(
+                context,
+                MaterialPageRoute(builder: (context) => const MainLayout(initialIndex: 1)),
+                (route) => false,
+              );
+            }
+          }
+        }
+      } catch (e) {
+        // ignore
+      } finally {
+        _isChecking = false;
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Đang chờ thanh toán', style: TextStyle(color: Color(0xFF0F2050))),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: const [
+          Text('Vui lòng hoàn tất thanh toán trên cổng VNPAY. Hệ thống sẽ tự động chuyển trang khi thanh toán thành công.'),
+          SizedBox(height: 16),
+          CircularProgressIndicator(),
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: () async {
+            _timer?.cancel();
+            Navigator.pop(context);
+            await ApiService.hardDeleteBooking(widget.bookingId);
+            if (context.mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Đã hủy giao dịch VNPAY', style: TextStyle(color: Colors.white)), backgroundColor: Colors.red));
+            }
+          },
+          child: const Text('Hủy thanh toán', style: TextStyle(color: Colors.red)),
+        ),
+      ]
     );
   }
 }

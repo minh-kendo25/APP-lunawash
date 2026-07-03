@@ -7,14 +7,12 @@ import 'package:shared_preferences/shared_preferences.dart';
 class ApiService {
   // Tự động nhận diện nền tảng để trỏ đúng IP của Backend
   static String get baseUrl {
-    if (kIsWeb) {
-      return 'http://localhost:5010/api';
-    }
-    // Nếu chạy trên máy ảo Android
-    if (Platform.isAndroid) {
-      return 'http://10.0.2.2:5010/api';
-    }
-    return 'http://localhost:5010/api';
+    // Dùng LocalHost để test các fix mới nhất
+    if (kIsWeb) return 'http://127.0.0.1:5010/api';
+    if (Platform.isAndroid) return 'http://10.0.2.2:5010/api';
+    return 'http://127.0.0.1:5010/api';
+    
+    // return 'https://lunawash-be.onrender.com/api';
   }
 
   static Future<List<dynamic>> fetchServices() async {
@@ -62,6 +60,29 @@ class ApiService {
         return json.decode(response.body);
       } else {
         return {'error': 'Login failed: ${response.statusCode}'};
+      }
+    } catch (e) {
+      return {'error': 'Network error: $e'};
+    }
+  }
+
+  static Future<Map<String, dynamic>> googleLogin(String token) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/auth/google-login'),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({'token': token}),
+      );
+      
+      if (response.statusCode == 200) {
+        return json.decode(response.body);
+      } else {
+        try {
+          final errData = json.decode(response.body);
+          return {'error': errData['message'] ?? 'Google login failed'};
+        } catch (_) {
+          return {'error': 'Google login failed: ${response.statusCode}'};
+        }
       }
     } catch (e) {
       return {'error': 'Network error: $e'};
@@ -258,6 +279,70 @@ class ApiService {
       return [];
     } catch (e) {
       return [];
+    }
+  }
+
+  // Hủy lịch đặt
+  static Future<bool> cancelBooking(String bookingId) async {
+    try {
+      final token = await getToken();
+      if (token == null) return false;
+
+      final response = await http.delete(
+        Uri.parse('$baseUrl/bookings/$bookingId'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
+      
+      return response.statusCode == 200;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  // Xóa cứng lịch đặt (khi VNPAY hủy)
+  static Future<bool> hardDeleteBooking(String id) async {
+    try {
+      final token = await getToken();
+      if (token == null) return false;
+
+      final response = await http.delete(
+        Uri.parse('$baseUrl/bookings/hard-delete/$id'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
+      
+      return response.statusCode == 200;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  // Lấy link thanh toán VNPAY
+  static Future<String?> getVnPayUrl(String bookingId) async {
+    try {
+      final token = await getToken();
+      if (token == null) return null;
+
+      final response = await http.post(
+        Uri.parse('$baseUrl/Payments/create-vnpay-url/$bookingId'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        return data['url'];
+      }
+      return null;
+    } catch (e) {
+      return null;
     }
   }
 
