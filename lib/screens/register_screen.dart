@@ -89,6 +89,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
         clientId: kIsWeb ? clientId : null, 
         serverClientId: clientId,
       );
+      await googleSignIn.signOut();
       GoogleSignInAccount? account = await googleSignIn.signIn();
       if (account == null) {
         setState(() => _isLoading = false);
