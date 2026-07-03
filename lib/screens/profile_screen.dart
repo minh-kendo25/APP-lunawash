@@ -16,6 +16,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   String _phone = '';
   String _address = 'Chưa cập nhật';
   int _points = 0;
+  String _tierName = 'ĐỒNG';
   List<dynamic> _cars = [];
 
   final List<Map<String, String>> _vehicleTypes = [
@@ -46,6 +47,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             _address = profile['address'] ?? 'Chưa cập nhật';
             if (_address.isEmpty) _address = 'Chưa cập nhật';
             _points = profile['loyalty']?['currentPoints'] ?? 0;
+            _tierName = profile['loyalty']?['tierName'] ?? 'ĐỒNG';
           }
           _cars = vehicles;
           _isLoading = false;
@@ -104,12 +106,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       color: Colors.amber.shade100,
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    child: const Row(
+                    child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(Icons.workspace_premium, size: 16, color: Colors.orange),
-                        SizedBox(width: 4),
-                        Text('Thành viên Gold', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.orange)),
+                        const Icon(Icons.workspace_premium, size: 16, color: Colors.orange),
+                        const SizedBox(width: 4),
+                        Text('Thành viên $_tierName', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.orange)),
                       ],
                     ),
                   ),
@@ -153,6 +155,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ],
               ),
             ),
+            const SizedBox(height: 24),
+
+            _buildMembershipTable(),
             const SizedBox(height: 24),
 
             // Thông tin cá nhân
@@ -562,6 +567,75 @@ class _ProfileScreenState extends State<ProfileScreen> {
           borderRadius: BorderRadius.circular(12),
           borderSide: const BorderSide(color: Color(0xFF4EE1F1)),
         ),
+      ),
+    );
+  }
+
+  Widget _buildMembershipTable() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Điều kiện xét hạng',
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+            color: Color(0xFF0F2050),
+          ),
+        ),
+        const SizedBox(height: 12),
+        Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: Colors.grey.shade200),
+          ),
+          child: Column(
+            children: [
+              _buildTableRow('Hạng thành viên', 'Điều kiện lên hạng', isHeader: true),
+              const Divider(height: 1, thickness: 1, color: Color(0xFFF3F4F6)),
+              _buildTableRow('ĐỒNG', 'Mặc định'),
+              const Divider(height: 1, thickness: 1, color: Color(0xFFF3F4F6)),
+              _buildTableRow('BẠC', 'Từ 1.000 pt'),
+              const Divider(height: 1, thickness: 1, color: Color(0xFFF3F4F6)),
+              _buildTableRow('VÀNG', 'Từ 3.000 pt'),
+              const Divider(height: 1, thickness: 1, color: Color(0xFFF3F4F6)),
+              _buildTableRow('PLATINUM', 'Từ 5.000 pt'),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildTableRow(String col1, String col2, {bool isHeader = false}) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      child: Row(
+        children: [
+          Expanded(
+            flex: 2,
+            child: Text(
+              col1,
+              style: TextStyle(
+                fontWeight: isHeader ? FontWeight.bold : FontWeight.w600,
+                color: isHeader ? Colors.grey.shade600 : const Color(0xFF0F2050),
+                fontSize: 13,
+              ),
+            ),
+          ),
+          Expanded(
+            flex: 3,
+            child: Text(
+              col2,
+              style: TextStyle(
+                fontWeight: isHeader ? FontWeight.bold : FontWeight.normal,
+                color: isHeader ? Colors.grey.shade600 : Colors.black87,
+                fontSize: 13,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
