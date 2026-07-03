@@ -6,7 +6,7 @@ class GeminiService {
   static const String _p2 = '7t91-VgUGbY0ZQ2W5';
   static const String _p3 = 'FHL9wZL5QeoLD-Y4NFWsQ';
   static const String _apiKey = '$_p1$_p2$_p3';
-  static const String _apiUrl = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=$_apiKey';
+  static const String _apiUrl = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=$_apiKey';
 
   static const String _systemInstruction = '''
 Bạn là Luna AI Assistant - Trợ lý hỗ trợ khách hàng thông minh của hệ thống rửa xe cao cấp LunaWash.
