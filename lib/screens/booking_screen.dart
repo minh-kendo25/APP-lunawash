@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'main_layout.dart';
+import '../services/api_service.dart';
 
 class BookingScreen extends StatefulWidget {
   const BookingScreen({super.key});
@@ -12,8 +14,9 @@ class _BookingScreenState extends State<BookingScreen> {
   final ScrollController _scrollController = ScrollController();
   
   int _selectedBranchIndex = 0;
-  int _selectedPackageIndex = 1;
-  bool _isInteriorCleanSelected = false;
+  String _selectedMainServiceId = '';
+  List<String> _selectedAddOnIds = [];
+  
   int _selectedTimeSlotIndex = -1;
   DateTime _selectedDate = DateTime.now();
   int _selectedStationIndex = 0;
@@ -21,10 +24,90 @@ class _BookingScreenState extends State<BookingScreen> {
   int _selectedVehicleIndex = 1;
   String _paymentMethod = 'vnpay';
 
+  Set<int> _occupiedSlots = {};
+  bool _isLoadingSlots = false;
+
+  List<dynamic> _mainPackages = [];
+  List<dynamic> _addOnServices = [];
+  bool _isLoadingServices = true;
+
   @override
   void initState() {
     super.initState();
     _scrollController.addListener(_onScroll);
+    _loadVehicles();
+    _fetchOccupiedSlots();
+    _fetchServices();
+  }
+
+  Future<void> _fetchServices() async {
+    try {
+      final data = await ApiService.fetchServices();
+      if (mounted) {
+        setState(() {
+          _mainPackages = data.where((s) => s['serviceType'] == 'Package' && s['isActive'] == true).toList();
+          _addOnServices = data.where((s) => s['serviceType'] == 'AddOn' && s['isActive'] == true).toList();
+          if (_mainPackages.isNotEmpty) {
+            _selectedMainServiceId = _mainPackages[0]['id'];
+          }
+          _isLoadingServices = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isLoadingServices = false);
+      }
+    }
+  }
+
+  Future<void> _loadVehicles() async {
+    final vehicles = await ApiService.getVehicles();
+    if (mounted) {
+      setState(() {
+        _savedVehicles = vehicles;
+        if (_savedVehicles.isNotEmpty) {
+          _selectedSavedVehicleIndex = 0;
+        }
+      });
+    }
+  }
+
+  Future<void> _fetchOccupiedSlots() async {
+    if (!mounted) return;
+    setState(() => _isLoadingSlots = true);
+    
+    final branchIds = ['BRN-LD-01', 'BRN-TTH-01', 'BRN-Q1-01', 'BRN-Q7-01', 'BRN-TB-01'];
+    final branchId = branchIds[_selectedBranchIndex];
+    final washSlotId = '$branchId-WS-0${_selectedStationIndex + 1}';
+    final dateStr = '${_selectedDate.year}-${_selectedDate.month.toString().padLeft(2, '0')}-${_selectedDate.day.toString().padLeft(2, '0')}';
+
+    final data = await ApiService.getOccupiedSlots(dateStr, washSlotId);
+    
+    if (!mounted) return;
+    
+    Set<int> blocked = {};
+
+    for (var booking in data) {
+      try {
+        DateTime startD = DateTime.parse(booking['startTime']).toLocal();
+        DateTime endD = DateTime.parse(booking['endTime']).toLocal();
+        int startTotal = startD.hour * 60 + startD.minute;
+        int endTotal = endD.hour * 60 + endD.minute;
+        
+        for (int i = 0; i < 20; i++) {
+          int tm = 240 + (i * 45);
+          if (tm >= startTotal && tm < endTotal) blocked.add(i);
+        }
+      } catch (e) {}
+    }
+    
+    setState(() {
+      _occupiedSlots = blocked;
+      _isLoadingSlots = false;
+      if (_occupiedSlots.contains(_selectedTimeSlotIndex)) {
+        _selectedTimeSlotIndex = -1;
+      }
+    });
   }
 
   @override
@@ -53,10 +136,7 @@ class _BookingScreenState extends State<BookingScreen> {
     }
   }
 
-  final List<Map<String, dynamic>> _savedVehicles = [
-    {'plate': '51A-123.45', 'typeIndex': 1}, // Ô tô 4 chỗ
-    {'plate': '60B-987.65', 'typeIndex': 3}, // Xe bán tải
-  ];
+  List<dynamic> _savedVehicles = [];
 
   final List<Map<String, dynamic>> _vehicleTypes = [
     {'name': 'Ô tô 2 chỗ', 'price': '500.000đ', 'time': '120 phút', 'slots': 3, 'holdTime': '135 phút'},
@@ -107,21 +187,44 @@ class _BookingScreenState extends State<BookingScreen> {
         _selectedDate = picked;
         _selectedTimeSlotIndex = -1;
       });
+      _fetchOccupiedSlots();
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    int totalPrice = 0;
-    if (_selectedPackageIndex == 0) totalPrice += 150000;
-    if (_selectedPackageIndex == 1) totalPrice += 250000;
-    if (_selectedPackageIndex == 2) totalPrice += 500000;
-    
-    if (_isInteriorCleanSelected) {
-      String priceStr = _vehicleTypes[_selectedVehicleIndex]['price'].replaceAll('.', '').replaceAll('đ', '');
-      totalPrice += int.tryParse(priceStr) ?? 0;
+    String selectedVehicleTypeId = 'VT-OTO-4C';
+    if (_savedVehicles.isNotEmpty) {
+      selectedVehicleTypeId = _savedVehicles[_selectedSavedVehicleIndex]['vehicleTypeId']?.toString() ?? 'VT-OTO-4C';
     }
-    
+
+    int totalPrice = 0;
+    int requiredSlots = 0;
+
+    if (_selectedMainServiceId.isNotEmpty) {
+      try {
+        var mainPkg = _mainPackages.firstWhere((p) => p['id'] == _selectedMainServiceId);
+        if (mainPkg['prices'] != null) {
+          var sp = (mainPkg['prices'] as List).firstWhere((p) => p['vehicleTypeId'] == selectedVehicleTypeId);
+          totalPrice += (sp['price'] as num).toInt();
+          requiredSlots += ((sp['durationMinutes'] as num).toInt() / 45).ceil();
+        }
+      } catch (e) {}
+    }
+
+    for (var addOnId in _selectedAddOnIds) {
+      try {
+        var addOn = _addOnServices.firstWhere((a) => a['id'] == addOnId);
+        if (addOn['prices'] != null) {
+          var sp = (addOn['prices'] as List).firstWhere((p) => p['vehicleTypeId'] == selectedVehicleTypeId);
+          totalPrice += (sp['price'] as num).toInt();
+          requiredSlots += ((sp['durationMinutes'] as num).toInt() / 45).ceil();
+        }
+      } catch (e) {}
+    }
+
+    if (requiredSlots == 0) requiredSlots = 1;
+
     String formatCurrency(int amount) {
       String s = amount.toString();
       String res = '';
@@ -135,7 +238,7 @@ class _BookingScreenState extends State<BookingScreen> {
     }
     
     String formattedTotal = formatCurrency(totalPrice);
-    String formattedOldTotal = formatCurrency(totalPrice + 50000);
+    String formattedOldTotal = formatCurrency(totalPrice + 50000); // Dummy for UI
     
     String selectedTimeStr = 'Chọn giờ';
     if (_selectedTimeSlotIndex != -1) {
@@ -145,11 +248,6 @@ class _BookingScreenState extends State<BookingScreen> {
       String time = '${h.toString().padLeft(2, '0')}:${m.toString().padLeft(2, '0')}';
       String dayStr = (_selectedDate.year == DateTime.now().year && _selectedDate.month == DateTime.now().month && _selectedDate.day == DateTime.now().day) ? 'Hôm nay' : '${_selectedDate.day}/${_selectedDate.month}';
       selectedTimeStr = '$time - $dayStr';
-    }
-
-    int requiredSlots = 1;
-    if (_isInteriorCleanSelected) {
-      requiredSlots = _vehicleTypes[_selectedVehicleIndex]['slots'];
     }
 
     int getSlotState(int idx) {
@@ -162,6 +260,7 @@ class _BookingScreenState extends State<BookingScreen> {
           return 1; // Past
         }
       }
+      if (_occupiedSlots.contains(idx)) return 2; // Booked
       return 0; // Available
     }
 
@@ -294,11 +393,31 @@ class _BookingScreenState extends State<BookingScreen> {
                   // Gói dịch vụ chính
                   const Text('Gói dịch vụ chính', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                   const SizedBox(height: 16),
-                  _buildMainServiceCard('Cơ bản', 'Rửa sạch ngoại thất, làm khô tự động và xịt bóng lốp.', '150k', _selectedPackageIndex == 0, () => setState(() => _selectedPackageIndex = 0)),
-                  const SizedBox(height: 12),
-                  _buildMainServiceCard('Nâng cao', 'Dịch vụ cơ bản kết hợp vệ sinh gầm và tẩy ố lazang.', '250k', _selectedPackageIndex == 1, () => setState(() => _selectedPackageIndex = 1)),
-                  const SizedBox(height: 12),
-                  _buildMainServiceCard('Cao cấp', 'Chăm sóc toàn diện với phủ Nano Ceramic bảo vệ sơn xe.', '500k', _selectedPackageIndex == 2, () => setState(() => _selectedPackageIndex = 2)),
+                  if (_isLoadingServices)
+                    const Center(child: CircularProgressIndicator())
+                  else if (_mainPackages.isEmpty)
+                    const Text('Không có gói dịch vụ nào')
+                  else
+                    ..._mainPackages.map((pkg) {
+                      String priceStr = 'N/A';
+                      try {
+                        var sp = (pkg['prices'] as List).firstWhere((p) => p['vehicleTypeId'] == selectedVehicleTypeId);
+                        priceStr = formatCurrency(sp['price'].toInt());
+                      } catch(e) {}
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 12),
+                        child: _buildMainServiceCard(
+                          pkg['serviceName'] ?? 'Dịch vụ', 
+                          pkg['description'] ?? '', 
+                          priceStr, 
+                          _selectedMainServiceId == pkg['id'], 
+                          () => setState(() {
+                            _selectedMainServiceId = pkg['id']?.toString() ?? '';
+                            _selectedTimeSlotIndex = -1;
+                          })
+                        ),
+                      );
+                    }).toList(),
                   
                   const SizedBox(height: 24),
                   
@@ -342,9 +461,9 @@ class _BookingScreenState extends State<BookingScreen> {
                               Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Text(_savedVehicles[_selectedSavedVehicleIndex]['plate'], style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                                  Text(_savedVehicles.isEmpty ? 'Chưa có xe' : (_savedVehicles[_selectedSavedVehicleIndex]['license']?.toString() ?? 'Biển số'), style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                                   const SizedBox(height: 4),
-                                  Text(_vehicleTypes[_savedVehicles[_selectedSavedVehicleIndex]['typeIndex']]['name'], style: const TextStyle(fontSize: 13, color: Colors.black54)),
+                                  Text(_savedVehicles.isEmpty ? 'Vui lòng thêm xe' : '${_savedVehicles[_selectedSavedVehicleIndex]['name'] ?? 'Xe chưa phân loại'}', style: const TextStyle(fontSize: 13, color: Colors.black54)),
                                 ],
                               ),
                             ],
@@ -360,7 +479,32 @@ class _BookingScreenState extends State<BookingScreen> {
                   // Dịch vụ thêm
                   const Text('Dịch vụ thêm (Tùy chọn)', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                   const SizedBox(height: 16),
-                  _buildInteriorCleaningDetailedOption(),
+                  if (_isLoadingServices)
+                    const Center(child: CircularProgressIndicator())
+                  else if (_addOnServices.isEmpty)
+                    const Text('Không có dịch vụ thêm nào')
+                  else
+                    ..._addOnServices.map((addOn) {
+                      String priceStr = 'N/A';
+                      try {
+                        var sp = (addOn['prices'] as List).firstWhere((p) => p['vehicleTypeId'] == selectedVehicleTypeId);
+                        priceStr = formatCurrency(sp['price'].toInt());
+                      } catch(e) {}
+                      bool isSelected = _selectedAddOnIds.contains(addOn['id']);
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 12),
+                        child: _buildAddOnCard(
+                          addOn['serviceName'] ?? 'Dịch vụ thêm', 
+                          priceStr, 
+                          isSelected, 
+                          () => setState(() {
+                            if (isSelected) _selectedAddOnIds.remove(addOn['id']?.toString() ?? '');
+                            else _selectedAddOnIds.add(addOn['id']?.toString() ?? '');
+                            _selectedTimeSlotIndex = -1;
+                          })
+                        ),
+                      );
+                    }).toList(),
                   
                   const SizedBox(height: 24),
                   
@@ -380,10 +524,13 @@ class _BookingScreenState extends State<BookingScreen> {
                             (index) {
                               bool isSelected = _selectedStationIndex == index;
                               return GestureDetector(
-                                onTap: () => setState(() {
-                                  _selectedStationIndex = index;
-                                  _selectedTimeSlotIndex = -1;
-                                }),
+                                onTap: () {
+                                  setState(() {
+                                    _selectedStationIndex = index;
+                                    _selectedTimeSlotIndex = -1;
+                                  });
+                                  _fetchOccupiedSlots();
+                                },
                                 child: Container(
                                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
                                   decoration: BoxDecoration(
@@ -862,11 +1009,105 @@ class _BookingScreenState extends State<BookingScreen> {
                     width: double.infinity,
                     height: 54,
                     child: ElevatedButton(
-                      onPressed: () {
-                        Navigator.pop(context); // Close popup
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Đang chuyển hướng thanh toán...')),
+                      onPressed: () async {
+                        if (_selectedTimeSlotIndex == -1) return;
+                        
+                        // Prepare payload
+                        final branchIds = ['BRN-LD-01', 'BRN-TTH-01', 'BRN-Q1-01', 'BRN-Q7-01', 'BRN-TB-01'];
+                        final branchId = branchIds[_selectedBranchIndex];
+                        final washSlotId = '$branchId-WS-0${_selectedStationIndex + 1}';
+                        
+                        var activeVeh = _savedVehicles.isNotEmpty ? _savedVehicles[_selectedSavedVehicleIndex] : {};
+                        
+                        List<String> serviceIds = [];
+                        
+                        String selectedVehicleTypeId = activeVeh['vehicleTypeId']?.toString() ?? 'VT-OTO-4C';
+                        
+                        if (_selectedMainServiceId.isNotEmpty) {
+                          try {
+                            var mainPkg = _mainPackages.firstWhere((p) => p['id'] == _selectedMainServiceId);
+                            if (mainPkg['prices'] != null) {
+                              var sp = (mainPkg['prices'] as List).firstWhere((p) => p['vehicleTypeId'] == selectedVehicleTypeId);
+                              serviceIds.add(sp['id']?.toString() ?? '');
+                            }
+                          } catch (e) {}
+                        }
+                        
+                        for (var addOnId in _selectedAddOnIds) {
+                          try {
+                            var addOn = _addOnServices.firstWhere((a) => a['id'] == addOnId);
+                            if (addOn['prices'] != null) {
+                              var sp = (addOn['prices'] as List).firstWhere((p) => p['vehicleTypeId'] == selectedVehicleTypeId);
+                              serviceIds.add(sp['id']?.toString() ?? '');
+                            }
+                          } catch (e) {}
+                        }
+                        
+                        int tm = 240 + (_selectedTimeSlotIndex * 45);
+                        int hr = tm ~/ 60;
+                        int min = tm % 60;
+                        DateTime startTime = DateTime(_selectedDate.year, _selectedDate.month, _selectedDate.day, hr, min);
+                        
+                        final payload = {
+                          "BranchId": branchId,
+                          "WashSlotId": washSlotId,
+                          "VehicleTypeId": activeVeh['vehicleTypeId']?.toString() ?? 'VT-OTO-4C',
+                          "LicensePlate": activeVeh['license'] ?? '',
+                          "VehicleBrand": "",
+                          "VehicleModel": activeVeh['name'] ?? '',
+                          "ScheduledStartTime": startTime.toLocal().toIso8601String(),
+                          "Duration": requiredSlots * 45,
+                          "Notes": "Đặt qua ứng dụng di động",
+                          "ServicePriceIds": serviceIds
+                        };
+
+                        // Show loading indicator
+                        showDialog(
+                          context: context,
+                          barrierDismissible: false,
+                          builder: (context) => const Center(child: CircularProgressIndicator()),
                         );
+                        
+                        final res = await ApiService.createBooking(payload);
+                        
+                        Navigator.pop(context); // Close loading indicator
+                        Navigator.pop(context); // Close summary popup
+                        
+                        if (res['success'] == true) {
+                          showDialog(
+                            context: context,
+                            builder: (BuildContext context) {
+                              return AlertDialog(
+                                backgroundColor: Colors.white,
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                                title: const Row(
+                                  children: [
+                                    Icon(Icons.check_circle, color: Colors.teal, size: 28),
+                                    SizedBox(width: 8),
+                                    Text('Thành công', style: TextStyle(color: Color(0xFF0F2050), fontWeight: FontWeight.bold)),
+                                  ],
+                                ),
+                                content: const Text('Bạn đã đặt lịch rửa xe thành công!'),
+                                actions: [
+                                  TextButton(
+                                    onPressed: () {
+                                      Navigator.pushAndRemoveUntil(
+                                        context,
+                                        MaterialPageRoute(builder: (context) => MainLayout(initialIndex: 1)),
+                                        (route) => false,
+                                      );
+                                    },
+                                    child: const Text('Xem lịch sử', style: TextStyle(color: Color(0xFF4EE1F1), fontWeight: FontWeight.bold)),
+                                  ),
+                                ],
+                              );
+                            },
+                          );
+                        } else {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text(res['error']?.toString() ?? 'Đã xảy ra lỗi khi đặt lịch')),
+                          );
+                        }
                       },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFF4EE1F1),
@@ -941,6 +1182,34 @@ class _BookingScreenState extends State<BookingScreen> {
           const SizedBox(height: 2),
           Text(status, style: TextStyle(fontSize: 9, color: isSelected ? Colors.white70 : Colors.black54)),
         ],
+      ),
+    );
+  }
+
+  Widget _buildAddOnCard(String title, String price, bool isSelected, VoidCallback onTap) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: isSelected ? Colors.blue.shade50 : Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: isSelected ? Colors.blue : Colors.grey.shade300, width: isSelected ? 2 : 1),
+          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 8, offset: const Offset(0, 2))],
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Row(
+              children: [
+                Icon(Icons.add_circle, color: isSelected ? Colors.blue : Colors.grey, size: 24),
+                const SizedBox(width: 12),
+                Text(title, style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: isSelected ? Colors.blue.shade700 : Colors.black87)),
+              ],
+            ),
+            Text(price, style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: isSelected ? Colors.blue : Colors.black87)),
+          ],
+        ),
       ),
     );
   }
@@ -1023,10 +1292,13 @@ class _BookingScreenState extends State<BookingScreen> {
   Widget _buildStationTab(String title, int index) {
     bool isSelected = _selectedStationIndex == index;
     return GestureDetector(
-      onTap: () => setState(() {
-        _selectedStationIndex = index;
-        _selectedTimeSlotIndex = -1; // Reset slot khi chuyển trạm
-      }),
+      onTap: () {
+        setState(() {
+          _selectedStationIndex = index;
+          _selectedTimeSlotIndex = -1; // Reset slot khi chuyển trạm
+        });
+        _fetchOccupiedSlots();
+      },
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
         decoration: BoxDecoration(
@@ -1121,6 +1393,7 @@ class _BookingScreenState extends State<BookingScreen> {
                         _selectedStationIndex = 0;
                         _selectedTimeSlotIndex = -1;
                       });
+                      _fetchOccupiedSlots();
                       Navigator.pop(context);
                     },
                   );
@@ -1133,129 +1406,7 @@ class _BookingScreenState extends State<BookingScreen> {
     );
   }
 
-  Widget _buildInteriorCleaningDetailedOption() {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: _isInteriorCleanSelected ? Colors.blue : Colors.grey.shade300, width: _isInteriorCleanSelected ? 2 : 1),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 8, offset: const Offset(0, 2))],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: const [
-              Icon(Icons.cleaning_services, color: Colors.blue, size: 20),
-              SizedBox(width: 8),
-              Text('DỊCH VỤ VỆ SINH NỘI THẤT KÈM THEO', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.blue)),
-            ],
-          ),
-          const SizedBox(height: 8),
-          const Text('Dịch vụ bổ sung vệ sinh nội thất chuyên sâu tùy chọn. Hệ thống tự động nhận diện loại xe hiện tại của bạn để áp dụng mức giá và số slot phù hợp.', style: TextStyle(fontSize: 12, color: Colors.black54, height: 1.4)),
-          const SizedBox(height: 16),
-          
-          // Bảng thông số chi tiết
-          Container(
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Colors.grey.shade200),
-            ),
-            child: Column(
-              children: [
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                  decoration: BoxDecoration(
-                    color: Colors.grey.shade50,
-                    borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
-                  ),
-                  child: Row(
-                    children: const [
-                      Expanded(flex: 3, child: Text('LOẠI XE', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 10, color: Colors.black54))),
-                      Expanded(flex: 3, child: Text('GIÁ ĐỀ XUẤT', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 10, color: Colors.black54))),
-                      Expanded(flex: 2, child: Text('SỐ SLOT', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 10, color: Colors.black54), textAlign: TextAlign.right)),
-                    ],
-                  ),
-                ),
-                ...List.generate(_vehicleTypes.length, (index) {
-                  bool isSelected = _selectedVehicleIndex == index;
-                  var v = _vehicleTypes[index];
-                  return Container(
-                    color: isSelected ? Colors.blue.withOpacity(0.05) : Colors.white,
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-                    child: Row(
-                      children: [
-                        Expanded(flex: 3, child: Text(v['name'], style: TextStyle(fontWeight: isSelected ? FontWeight.bold : FontWeight.w500, color: isSelected ? Colors.blue.shade700 : Colors.black87, fontSize: 12))),
-                        Expanded(flex: 3, child: Text(v['price'], style: TextStyle(fontWeight: isSelected ? FontWeight.bold : FontWeight.bold, color: isSelected ? Colors.blue.shade700 : Colors.black87, fontSize: 12))),
-                        Expanded(flex: 2, child: Text('${v['slots']} slot', style: TextStyle(fontWeight: isSelected ? FontWeight.bold : FontWeight.normal, color: isSelected ? Colors.blue.shade700 : Colors.black54, fontSize: 12), textAlign: TextAlign.right)),
-                      ],
-                    ),
-                  );
-                }),
-              ],
-            ),
-          ),
-          
-          const SizedBox(height: 16),
-          
-          // Lưu ý quan trọng
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: Colors.amber.shade50,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Colors.amber.shade200),
-            ),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Icon(Icons.warning_amber_rounded, color: Colors.amber, size: 20),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: const [
-                      Text('Lưu ý quan trọng khi chọn dịch vụ', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Colors.amber)),
-                      SizedBox(height: 4),
-                      Text('Khi chọn thêm dịch vụ vệ sinh nội thất, các slot đặt lịch bắt buộc phải chọn liên tiếp và liền kề nhau.', style: TextStyle(fontSize: 11, color: Colors.black87, height: 1.4)),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-          
-          const SizedBox(height: 16),
-          
-          // Checkbox Thêm gói
-          GestureDetector(
-            onTap: () => setState(() {
-              _isInteriorCleanSelected = !_isInteriorCleanSelected;
-              _selectedTimeSlotIndex = -1;
-            }),
-            child: Container(
-              padding: const EdgeInsets.symmetric(vertical: 12),
-              decoration: BoxDecoration(
-                border: Border.all(color: _isInteriorCleanSelected ? Colors.blue : Colors.grey.shade300),
-                borderRadius: BorderRadius.circular(8),
-                color: _isInteriorCleanSelected ? Colors.blue.shade50 : Colors.white,
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(_isInteriorCleanSelected ? Icons.check_box : Icons.check_box_outline_blank, color: _isInteriorCleanSelected ? Colors.blue : Colors.grey),
-                  const SizedBox(width: 8),
-                  Text('THÊM GÓI VỆ SINH NỘI THẤT', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: _isInteriorCleanSelected ? Colors.blue : Colors.black87)),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+
 
   void _showSavedVehiclePicker() {
     showModalBottomSheet(
@@ -1276,7 +1427,8 @@ class _BookingScreenState extends State<BookingScreen> {
                 itemBuilder: (context, index) {
                   bool isSelected = _selectedSavedVehicleIndex == index;
                   var vehicle = _savedVehicles[index];
-                  var type = _vehicleTypes[vehicle['typeIndex']]['name'];
+                  var type = vehicle['name'] ?? '';
+                  if (type.isEmpty) type = 'Xe chưa phân loại';
                   return ListTile(
                     leading: Container(
                       padding: const EdgeInsets.all(8),
@@ -1286,8 +1438,8 @@ class _BookingScreenState extends State<BookingScreen> {
                       ),
                       child: Icon(Icons.directions_car, color: isSelected ? Colors.blue : Colors.black54),
                     ),
-                    title: Text(vehicle['plate'], style: TextStyle(fontWeight: isSelected ? FontWeight.bold : FontWeight.normal)),
-                    subtitle: Text(type, style: const TextStyle(fontSize: 12)),
+                    title: Text(vehicle['license']?.toString() ?? vehicle['plate']?.toString() ?? 'Biển số', style: TextStyle(fontWeight: isSelected ? FontWeight.bold : FontWeight.normal)),
+                    subtitle: Text(type.toString(), style: const TextStyle(fontSize: 12)),
                     trailing: isSelected ? const Icon(Icons.check_circle, color: Colors.blue) : null,
                     onTap: () {
                       setState(() {

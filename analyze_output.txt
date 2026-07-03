@@ -1,0 +1,75 @@
+Resolving dependencies...
+Downloading packages...
+  matcher 0.12.19 (0.12.20 available)
+  meta 1.18.0 (1.18.3 available)
+  path_provider_linux 2.2.1 (2.2.2 available)
+  test_api 0.7.11 (0.7.13 available)
+  vector_math 2.2.0 (2.4.0 available)
+Got dependencies!
+5 packages have newer versions incompatible with dependency constraints.
+Try `flutter pub outdated` for more information.
+Analyzing LunaWash-App...                                       
+
+   info - 'background' is deprecated and shouldn't be used. Use surface instead. This feature was deprecated after v3.18.0-0.1.pre. Try replacing the use of the deprecated member with the replacement - lib\main.dart:23:11 - deprecated_member_use
+   info - The private field _selectedAddOnIds could be 'final'. Try making the field 'final' - lib\screens\booking_screen.dart:18:16 - prefer_final_fields
+warning - The value of the field '_selectedVehicleIndex' isn't used. Try removing the field, or using it - lib\screens\booking_screen.dart:24:7 - unused_field
+warning - The value of the field '_isLoadingSlots' isn't used. Try removing the field, or using it - lib\screens\booking_screen.dart:28:8 - unused_field
+   info - Empty catch block. Try adding statements to the block, adding a comment to the block, or removing the 'catch' clause - lib\screens\booking_screen.dart:101:19 - empty_catches
+   info - Statements in an if should be enclosed in a block. Try wrapping the statement in a block - lib\screens\booking_screen.dart:128:25 - curly_braces_in_flow_control_structures
+   info - Statements in an if should be enclosed in a block. Try wrapping the statement in a block - lib\screens\booking_screen.dart:129:30 - curly_braces_in_flow_control_structures
+   info - Statements in an if should be enclosed in a block. Try wrapping the statement in a block - lib\screens\booking_screen.dart:130:30 - curly_braces_in_flow_control_structures
+warning - The value of the field '_vehicleTypes' isn't used. Try removing the field, or using it - lib\screens\booking_screen.dart:141:36 - unused_field
+   info - Empty catch block. Try adding statements to the block, adding a comment to the block, or removing the 'catch' clause - lib\screens\booking_screen.dart:212:19 - empty_catches
+   info - Empty catch block. Try adding statements to the block, adding a comment to the block, or removing the 'catch' clause - lib\screens\booking_screen.dart:223:19 - empty_catches
+   info - Use interpolation to compose strings and values. Try using string interpolation to build the composite string - lib\screens\booking_screen.dart:237:14 - prefer_interpolation_to_compose_strings
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement - lib\screens\booking_screen.dart:332:65 - deprecated_member_use
+   info - Empty catch block. Try adding statements to the block, adding a comment to the block, or removing the 'catch' clause - lib\screens\booking_screen.dart:406:34 - empty_catches
+   info - Unnecessary use of 'toList' in a spread. Try removing the invocation of 'toList' - lib\screens\booking_screen.dart:420:24 - unnecessary_to_list_in_spreads
+   info - Empty catch block. Try adding statements to the block, adding a comment to the block, or removing the 'catch' clause - lib\screens\booking_screen.dart:492:34 - empty_catches
+   info - Statements in an if should be enclosed in a block. Try wrapping the statement in a block - lib\screens\booking_screen.dart:501:45 - curly_braces_in_flow_control_structures
+   info - Statements in an if should be enclosed in a block. Try wrapping the statement in a block - lib\screens\booking_screen.dart:502:34 - curly_braces_in_flow_control_structures
+   info - Unnecessary use of 'toList' in a spread. Try removing the invocation of 'toList' - lib\screens\booking_screen.dart:507:24 - unnecessary_to_list_in_spreads
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement - lib\screens\booking_screen.dart:539:92 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement - lib\screens\booking_screen.dart:966:79 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement - lib\screens\booking_screen.dart:988:78 - deprecated_member_use
+   info - Empty catch block. Try adding statements to the block, adding a comment to the block, or removing the 'catch' clause - lib\screens\booking_screen.dart:1033:39 - empty_catches
+   info - Empty catch block. Try adding statements to the block, adding a comment to the block, or removing the 'catch' clause - lib\screens\booking_screen.dart:1043:39 - empty_catches
+   info - Don't use 'BuildContext's across async gaps. Try rewriting the code to not use the 'BuildContext', or guard the use with a 'mounted' check - lib\screens\booking_screen.dart:1073:39 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps. Try rewriting the code to not use the 'BuildContext', or guard the use with a 'mounted' check - lib\screens\booking_screen.dart:1074:39 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps. Try rewriting the code to not use the 'BuildContext', or guard the use with a 'mounted' check - lib\screens\booking_screen.dart:1078:29 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps. Try rewriting the code to not use the 'BuildContext', or guard the use with a 'mounted' check - lib\screens\booking_screen.dart:1107:48 - use_build_context_synchronously
+warning - The declaration '_buildBranchCard' isn't referenced. Try removing the declaration of '_buildBranchCard' - lib\screens\booking_screen.dart:1131:10 - unused_element
+warning - The declaration '_buildStationCard' isn't referenced. Try removing the declaration of '_buildStationCard' - lib\screens\booking_screen.dart:1169:10 - unused_element
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement - lib\screens\booking_screen.dart:1198:53 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement - lib\screens\booking_screen.dart:1232:50 - deprecated_member_use
+warning - The declaration '_buildAddonServiceCard' isn't referenced. Try removing the declaration of '_buildAddonServiceCard' - lib\screens\booking_screen.dart:1259:10 - unused_element
+warning - The declaration '_buildStationTab' isn't referenced. Try removing the declaration of '_buildStationTab' - lib\screens\booking_screen.dart:1292:10 - unused_element
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement - lib\screens\booking_screen.dart:1307:66 - deprecated_member_use
+   info - Unnecessary use of 'toList' in a spread. Try removing the invocation of 'toList' - lib\screens\history_screen.dart:73:74 - unnecessary_to_list_in_spreads
+   info - Unnecessary use of 'toList' in a spread. Try removing the invocation of 'toList' - lib\screens\history_screen.dart:107:24 - unnecessary_to_list_in_spreads
+   info - The local variable '_cleanlinessRating' starts with an underscore. Try renaming the variable to not start with an underscore - lib\screens\history_screen.dart:313:9 - no_leading_underscores_for_local_identifiers
+   info - The local variable '_speedRating' starts with an underscore. Try renaming the variable to not start with an underscore - lib\screens\history_screen.dart:314:9 - no_leading_underscores_for_local_identifiers
+   info - The local variable '_staffRating' starts with an underscore. Try renaming the variable to not start with an underscore - lib\screens\history_screen.dart:315:9 - no_leading_underscores_for_local_identifiers
+   info - The local variable '_isEdit' starts with an underscore. Try renaming the variable to not start with an underscore - lib\screens\history_screen.dart:316:10 - no_leading_underscores_for_local_identifiers
+   info - The local variable '_isLoadingReview' starts with an underscore. Try renaming the variable to not start with an underscore - lib\screens\history_screen.dart:317:10 - no_leading_underscores_for_local_identifiers
+   info - The local variable '_hasFetched' starts with an underscore. Try renaming the variable to not start with an underscore - lib\screens\history_screen.dart:318:10 - no_leading_underscores_for_local_identifiers
+   info - The local variable '_commentController' starts with an underscore. Try renaming the variable to not start with an underscore - lib\screens\history_screen.dart:319:33 - no_leading_underscores_for_local_identifiers
+warning - Unused import: 'profile_screen.dart'. Try removing the import directive - lib\screens\home_screen.dart:2:8 - unused_import
+warning - Unused import: 'login_screen.dart'. Try removing the import directive - lib\screens\home_screen.dart:3:8 - unused_import
+warning - Unused import: '../services/api_service.dart'. Try removing the import directive - lib\screens\home_screen.dart:4:8 - unused_import
+   info - Don't use 'BuildContext's across async gaps. Try rewriting the code to not use the 'BuildContext', or guard the use with a 'mounted' check - lib\screens\login_screen.dart:49:28 - use_build_context_synchronously
+   info - 'MaterialStateProperty' is deprecated and shouldn't be used. Use WidgetStateProperty instead. Moved to the Widgets layer to make code available outside of Material. This feature was deprecated after v3.19.0-0.3.pre. Try replacing the use of the deprecated member with the replacement - lib\screens\main_layout.dart:87:29 - deprecated_member_use
+   info - 'MaterialState' is deprecated and shouldn't be used. Use WidgetState instead. Moved to the Widgets layer to make code available outside of Material. This feature was deprecated after v3.19.0-0.3.pre. Try replacing the use of the deprecated member with the replacement - lib\screens\main_layout.dart:88:35 - deprecated_member_use
+   info - 'MaterialStateProperty' is deprecated and shouldn't be used. Use WidgetStateProperty instead. Moved to the Widgets layer to make code available outside of Material. This feature was deprecated after v3.19.0-0.3.pre. Try replacing the use of the deprecated member with the replacement - lib\screens\main_layout.dart:93:24 - deprecated_member_use
+   info - 'MaterialState' is deprecated and shouldn't be used. Use WidgetState instead. Moved to the Widgets layer to make code available outside of Material. This feature was deprecated after v3.19.0-0.3.pre. Try replacing the use of the deprecated member with the replacement - lib\screens\main_layout.dart:94:35 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement - lib\screens\main_layout.dart:151:43 - deprecated_member_use
+   info - The local variable '_isDarkMode' starts with an underscore. Try renaming the variable to not start with an underscore - lib\screens\main_layout.dart:288:10 - no_leading_underscores_for_local_identifiers
+   info - The local variable '_isNotificationEnabled' starts with an underscore. Try renaming the variable to not start with an underscore - lib\screens\main_layout.dart:289:10 - no_leading_underscores_for_local_identifiers
+   info - The local variable '_selectedLanguage' starts with an underscore. Try renaming the variable to not start with an underscore - lib\screens\main_layout.dart:290:12 - no_leading_underscores_for_local_identifiers
+   info - 'activeColor' is deprecated and shouldn't be used. Use activeThumbColor instead. This feature was deprecated after v3.31.0-2.0.pre. Try replacing the use of the deprecated member with the replacement - lib\screens\main_layout.dart:321:19 - deprecated_member_use
+   info - 'activeColor' is deprecated and shouldn't be used. Use activeThumbColor instead. This feature was deprecated after v3.31.0-2.0.pre. Try replacing the use of the deprecated member with the replacement - lib\screens\main_layout.dart:333:19 - deprecated_member_use
+   info - Unnecessary 'const' keyword. Try removing the keyword - lib\screens\profile_screen.dart:225:108 - unnecessary_const
+   info - Don't use 'BuildContext's across async gaps. Try rewriting the code to not use the 'BuildContext', or guard the use with a 'mounted' check - lib\screens\register_screen.dart:64:28 - use_build_context_synchronously
+  error - The name 'MyApp' isn't a class. Try correcting the name to match an existing class - test\widget_test.dart:16:35 - creation_with_non_type
+
+61 issues found. (ran in 15.2s)

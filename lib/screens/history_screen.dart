@@ -102,7 +102,8 @@ class _HistoryScreenState extends State<HistoryScreen> {
                       final isCancelled = status == 'CANCELLED';
                       final branch = b['branchInfo'] ?? '';
                       final time = b['timeRange'] ?? '';
-                      return _buildHistoryCard(context, title, car, date, price, status, color, Icons.cleaning_services_outlined, branch: branch, time: time, isCancelled: isCancelled);
+                      final bookingId = b['id']?.toString() ?? '';
+                      return _buildHistoryCard(context, title, car, date, price, status, color, Icons.cleaning_services_outlined, branch: branch, time: time, isCancelled: isCancelled, bookingId: bookingId);
                     }).toList(),
                     
                     const Padding(
@@ -225,9 +226,9 @@ class _HistoryScreenState extends State<HistoryScreen> {
     );
   }
 
-  Widget _buildHistoryCard(BuildContext context, String title, String car, String date, String price, String status, Color statusColor, IconData icon, {String branch = '', String time = '', bool isCancelled = false}) {
+  Widget _buildHistoryCard(BuildContext context, String title, String car, String date, String price, String status, Color statusColor, IconData icon, {String branch = '', String time = '', bool isCancelled = false, String bookingId = ''}) {
     return GestureDetector(
-      onTap: () => _showHistoryDetailPopup(context, title, car, date, price, status, statusColor, isCancelled),
+      onTap: () => _showHistoryDetailPopup(context, title, car, date, price, status, statusColor, isCancelled, bookingId),
       child: Container(
         margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
@@ -308,8 +309,41 @@ class _HistoryScreenState extends State<HistoryScreen> {
     ));
   }
 
-  void _showHistoryDetailPopup(BuildContext context, String title, String car, String date, String price, String status, Color statusColor, bool isCancelled) {
-    int _rating = 0;
+  void _showHistoryDetailPopup(BuildContext context, String title, String car, String date, String price, String status, Color statusColor, bool isCancelled, String bookingId) {
+    int _cleanlinessRating = 0;
+    int _speedRating = 0;
+    int _staffRating = 0;
+    bool _isEdit = false;
+    bool _isLoadingReview = !isCancelled;
+    bool _hasFetched = false;
+    final TextEditingController _commentController = TextEditingController();
+
+    Widget buildStarRow(String label, int currentRating, Function(int) onRatingChanged) {
+      return Padding(
+        padding: const EdgeInsets.only(bottom: 12),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(label, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: Color(0xFF0F2050))),
+            Row(
+              children: List.generate(5, (index) {
+                return GestureDetector(
+                  onTap: () => onRatingChanged(index + 1),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 2),
+                    child: Icon(
+                      index < currentRating ? Icons.star_rounded : Icons.star_outline_rounded,
+                      color: index < currentRating ? Colors.amber : Colors.grey.shade400,
+                      size: 28,
+                    ),
+                  ),
+                );
+              }),
+            ),
+          ],
+        ),
+      );
+    }
     
     showModalBottomSheet(
       context: context,
@@ -318,6 +352,26 @@ class _HistoryScreenState extends State<HistoryScreen> {
       builder: (BuildContext context) {
         return StatefulBuilder(
           builder: (BuildContext context, StateSetter setState) {
+            if (!_hasFetched && !isCancelled && bookingId.isNotEmpty) {
+              _hasFetched = true;
+              ApiService.getReviewByBooking(bookingId).then((reviewData) {
+                if (reviewData != null) {
+                  setState(() {
+                    _cleanlinessRating = reviewData['cleanlinessRating'] ?? 0;
+                    _speedRating = reviewData['speedRating'] ?? 0;
+                    _staffRating = reviewData['staffRating'] ?? 0;
+                    _commentController.text = reviewData['comment'] ?? '';
+                    _isEdit = true;
+                    _isLoadingReview = false;
+                  });
+                } else {
+                  setState(() => _isLoadingReview = false);
+                }
+              }).catchError((_) {
+                setState(() => _isLoadingReview = false);
+              });
+            }
+
             return Container(
               padding: EdgeInsets.only(
                 bottom: MediaQuery.of(context).viewInsets.bottom,
@@ -419,29 +473,20 @@ class _HistoryScreenState extends State<HistoryScreen> {
                             color: Color(0xFF0F2050),
                           ),
                         ),
-                        const SizedBox(height: 12),
-                        Center(
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: List.generate(5, (index) {
-                              return IconButton(
-                                icon: Icon(
-                                  index < _rating ? Icons.star_rounded : Icons.star_outline_rounded,
-                                  color: index < _rating ? Colors.amber : Colors.grey.shade400,
-                                  size: 40,
-                                ),
-                                onPressed: () {
-                                  setState(() {
-                                    _rating = index + 1;
-                                  });
-                                },
-                              );
-                            }),
-                          ),
-                        ),
                         const SizedBox(height: 16),
-                        TextField(
-                          maxLines: 3,
+                        if (_isLoadingReview)
+                          const Padding(
+                            padding: EdgeInsets.all(24.0),
+                            child: Center(child: CircularProgressIndicator()),
+                          )
+                        else ...[
+                          buildStarRow('Mức độ sạch sẽ', _cleanlinessRating, (r) => setState(() => _cleanlinessRating = r)),
+                          buildStarRow('Tốc độ dịch vụ', _speedRating, (r) => setState(() => _speedRating = r)),
+                          buildStarRow('Thái độ nhân viên', _staffRating, (r) => setState(() => _staffRating = r)),
+                          const SizedBox(height: 16),
+                          TextField(
+                            controller: _commentController,
+                            maxLines: 3,
                           decoration: InputDecoration(
                             hintText: 'Chia sẻ trải nghiệm của bạn (không bắt buộc)',
                             hintStyle: TextStyle(color: Colors.grey.shade400, fontSize: 14),
@@ -465,14 +510,35 @@ class _HistoryScreenState extends State<HistoryScreen> {
                         SizedBox(
                           width: double.infinity,
                           child: ElevatedButton(
-                            onPressed: () {
-                              Navigator.pop(context);
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text('Cảm ơn bạn đã đánh giá dịch vụ!'),
-                                  backgroundColor: Colors.teal,
-                                ),
-                              );
+                            onPressed: () async {
+                              if (_cleanlinessRating == 0 || _speedRating == 0 || _staffRating == 0) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(content: Text('Vui lòng đánh giá đủ 3 tiêu chí!'), backgroundColor: Colors.red),
+                                );
+                                return;
+                              }
+                              
+                              final calculatedOverall = double.parse(((_cleanlinessRating + _speedRating + _staffRating) / 3).toStringAsFixed(1));
+                              final payload = {
+                                'bookingId': bookingId,
+                                'serviceRating': calculatedOverall,
+                                'cleanlinessRating': _cleanlinessRating,
+                                'speedRating': _speedRating,
+                                'staffRating': _staffRating,
+                                'comment': _commentController.text,
+                              };
+                              
+                              final success = await ApiService.submitReview(payload, isEdit: _isEdit, bookingId: bookingId);
+                              
+                              if (context.mounted) {
+                                Navigator.pop(context);
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text(success ? 'Cảm ơn bạn đã đánh giá dịch vụ!' : 'Gửi đánh giá thất bại. Vui lòng thử lại!'),
+                                    backgroundColor: success ? Colors.teal : Colors.red,
+                                  ),
+                                );
+                              }
                             },
                             style: ElevatedButton.styleFrom(
                               backgroundColor: const Color(0xFF4EE1F1),
@@ -483,9 +549,10 @@ class _HistoryScreenState extends State<HistoryScreen> {
                               ),
                               elevation: 0,
                             ),
-                            child: const Text('Gửi đánh giá', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                            child: Text(_isEdit ? 'Cập nhật đánh giá' : 'Gửi đánh giá', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                           ),
                         ),
+                        ]
                       ],
                       const SizedBox(height: 16),
                     ],

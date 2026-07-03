@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'screens/login_screen.dart';
+import 'screens/main_layout.dart';
 
 void main() {
   runApp(const LunaWashApp());
@@ -27,7 +29,22 @@ class LunaWashApp extends StatelessWidget {
         ),
         useMaterial3: true,
       ),
-      home: const LoginScreen(),
+      home: FutureBuilder<SharedPreferences>(
+        future: SharedPreferences.getInstance(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Scaffold(
+              backgroundColor: Color(0xFF0F2050),
+              body: Center(child: CircularProgressIndicator(color: Color(0xFF4EE1F1))),
+            );
+          }
+          final token = snapshot.data?.getString('auth_token');
+          if (token != null && token.isNotEmpty) {
+            return const MainLayout();
+          }
+          return const LoginScreen();
+        },
+      ),
       debugShowCheckedModeBanner: false,
     );
   }

@@ -30,6 +30,26 @@ class ApiService {
     }
   }
 
+  static Future<List<dynamic>> getVehicles() async {
+    try {
+      final token = await getToken();
+      if (token == null) return [];
+      final response = await http.get(
+        Uri.parse('$baseUrl/vehicles'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
+      if (response.statusCode == 200) {
+        return json.decode(response.body);
+      }
+      return [];
+    } catch (e) {
+      return [];
+    }
+  }
+
   static Future<Map<String, dynamic>> login(String email, String password) async {
     try {
       final response = await http.post(
@@ -238,6 +258,106 @@ class ApiService {
       return [];
     } catch (e) {
       return [];
+    }
+  }
+
+  // Lấy đánh giá của một booking
+  static Future<Map<String, dynamic>?> getReviewByBooking(String bookingId) async {
+    try {
+      final token = await getToken();
+      if (token == null) return null;
+
+      final response = await http.get(
+        Uri.parse('$baseUrl/reviews/booking/$bookingId'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        return json.decode(response.body);
+      }
+      return null;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  // Gửi hoặc cập nhật đánh giá
+  static Future<bool> submitReview(Map<String, dynamic> payload, {bool isEdit = false, String? bookingId}) async {
+    try {
+      final token = await getToken();
+      if (token == null) return false;
+
+      final url = isEdit ? '$baseUrl/reviews/$bookingId' : '$baseUrl/reviews';
+      final method = isEdit ? http.put : http.post;
+
+      final response = await method(
+        Uri.parse(url),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+        body: json.encode(payload),
+      );
+
+      return response.statusCode == 200 || response.statusCode == 201;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  // Lấy danh sách khung giờ đã được đặt
+  static Future<List<dynamic>> getOccupiedSlots(String date, String washSlotId) async {
+    try {
+      final token = await getToken();
+      if (token == null) return [];
+
+      final response = await http.get(
+        Uri.parse('$baseUrl/bookings/occupied-slots?date=$date&washSlotId=$washSlotId'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        return json.decode(response.body);
+      }
+      return [];
+    } catch (e) {
+      return [];
+    }
+  }
+
+  // Tạo lịch đặt mới
+  static Future<Map<String, dynamic>> createBooking(Map<String, dynamic> payload) async {
+    try {
+      final token = await getToken();
+      if (token == null) return {'error': 'Unauthorized'};
+
+      final response = await http.post(
+        Uri.parse('$baseUrl/bookings'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+        body: json.encode(payload),
+      );
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        return {'success': true, 'data': json.decode(response.body)};
+      } else {
+        String errText = 'Không thể tạo lịch đặt.';
+        try {
+          final errData = json.decode(response.body);
+          if (errData['message'] != null) errText = errData['message'];
+        } catch (_) {}
+        return {'error': errText};
+      }
+    } catch (e) {
+      return {'error': 'Lỗi mạng: $e'};
     }
   }
 }
