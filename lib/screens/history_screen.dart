@@ -112,8 +112,8 @@ class _HistoryScreenState extends State<HistoryScreen> {
                       final date = b['bookingDate']?.toString().substring(0, 10) ?? '';
                       final price = b['totalPrice']?.toString() ?? '0đ';
                       final status = (b['status'] ?? '').toString().toUpperCase();
-                      final color = status == 'CANCELLED' ? Colors.grey : Colors.teal;
-                      final isCancelled = status == 'CANCELLED';
+                      final color = status == 'CANCELLED' || status == 'ĐÃ HỦY' ? Colors.grey : Colors.teal;
+                      final isCancelled = status == 'CANCELLED' || status == 'ĐÃ HỦY';
                       final branch = b['branchInfo'] ?? '';
                       final time = b['timeRange'] ?? '';
                       final bookingId = b['id']?.toString() ?? '';
@@ -155,140 +155,231 @@ class _HistoryScreenState extends State<HistoryScreen> {
     final branch = booking['branchInfo'] ?? '';
     final price = booking['totalPrice']?.toString() ?? '0đ';
     final status = booking['status'] ?? 'Đang chờ';
-    final canCancel = status == 'Sắp đến';
+    final canCancel = status == 'Sắp đến' || status == 'Pending';
+    final isWashing = status == 'Đang rửa';
+    final slotName = booking['slotName'] ?? 'Chờ xếp trạm';
     
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
-      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.grey.shade200),
+        border: Border.all(color: const Color(0xFF0F2050), width: 1.5),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
-      child: Column(
-        children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Colors.grey.shade200,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: const Icon(Icons.directions_car_filled, color: Colors.black87),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
-                    const SizedBox(height: 4),
-                    Text(car, style: TextStyle(fontSize: 12, color: Colors.grey.shade600)),
-                  ],
-                ),
-              ),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  color: status == 'Đang rửa' ? Colors.blue.shade50 : Colors.orange.shade50,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Text(status, style: TextStyle(
-                  color: status == 'Đang rửa' ? Colors.blue : Colors.orange, 
-                  fontSize: 10, 
-                  fontWeight: FontWeight.bold
-                )),
-              ),
-            ],
-          ),
-          const Padding(
-            padding: EdgeInsets.symmetric(vertical: 16),
-            child: Divider(height: 1),
-          ),
-          Row(
-            children: [
-              const Icon(Icons.location_on_outlined, size: 16, color: Colors.black54),
-              const SizedBox(width: 8),
-              Text(branch, style: TextStyle(fontSize: 12, color: Colors.grey.shade700)),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Row(
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(16),
+        child: Stack(
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Icon(Icons.access_time, size: 16, color: Colors.black54),
-                  const SizedBox(width: 8),
-                  Text(time, style: TextStyle(fontSize: 12, color: Colors.grey.shade700)),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: Text(title.toUpperCase(), style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 16, color: Color(0xFF0F2050))),
+                      ),
+                      const SizedBox(width: 80), // Space for badge
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          Text(price, style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 16, color: Color(0xFF0F2050))),
+                          const Text('Thanh toán tại quầy', style: TextStyle(fontSize: 10, color: Colors.black54)),
+                        ],
+                      ),
+                    ],
+                  ),
+                  const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 16),
+                    child: Divider(height: 1, color: Color(0xFFF1F5F9)),
+                  ),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                const Icon(Icons.location_on_outlined, size: 18, color: Color(0xFF0F2050)),
+                                const SizedBox(width: 8),
+                                const Text('Chi nhánh', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                              ],
+                            ),
+                            Padding(
+                              padding: const EdgeInsets.only(left: 26, top: 2),
+                              child: Text(branch, style: TextStyle(fontSize: 12, color: Colors.grey.shade600)),
+                            ),
+                            const SizedBox(height: 12),
+                            Row(
+                              children: [
+                                const Icon(Icons.access_time, size: 18, color: Color(0xFF0F2050)),
+                                const SizedBox(width: 8),
+                                const Text('Khung giờ (Dự kiến)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                              ],
+                            ),
+                            Padding(
+                              padding: const EdgeInsets.only(left: 26, top: 4),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                decoration: BoxDecoration(
+                                  color: Colors.blue.shade50,
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Text(time, style: TextStyle(fontSize: 11, color: Colors.blue.shade700, fontWeight: FontWeight.bold)),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                const Icon(Icons.local_car_wash_outlined, size: 18, color: Color(0xFF0F2050)),
+                                const SizedBox(width: 8),
+                                const Text('Trạm rửa', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                              ],
+                            ),
+                            Padding(
+                              padding: const EdgeInsets.only(left: 26, top: 2),
+                              child: Text(slotName, style: TextStyle(fontSize: 12, color: Colors.grey.shade600)),
+                            ),
+                            const SizedBox(height: 12),
+                            Row(
+                              children: [
+                                const Icon(Icons.directions_car_outlined, size: 18, color: Color(0xFF0F2050)),
+                                const SizedBox(width: 8),
+                                const Text('Phương tiện', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                              ],
+                            ),
+                            Padding(
+                              padding: const EdgeInsets.only(left: 26, top: 2),
+                              child: Text(car, style: TextStyle(fontSize: 12, color: Colors.grey.shade600)),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  if (canCancel) ...[
+                    const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 16),
+                      child: Divider(height: 1, color: Color(0xFFF1F5F9)),
+                    ),
+                    SizedBox(
+                      width: double.infinity,
+                      child: OutlinedButton.icon(
+                        onPressed: () {
+                          showDialog(
+                            context: context,
+                            builder: (BuildContext ctx) {
+                              return AlertDialog(
+                                title: const Text('Hủy lịch đặt', style: TextStyle(color: Color(0xFF0F2050))),
+                                content: const Text('Bạn có chắc chắn muốn hủy lịch đặt này không? Hành động này không thể hoàn tác.'),
+                                actions: [
+                                  TextButton(
+                                    onPressed: () => Navigator.pop(ctx),
+                                    child: const Text('Không', style: TextStyle(color: Colors.grey)),
+                                  ),
+                                  ElevatedButton(
+                                    onPressed: () async {
+                                      Navigator.pop(ctx);
+                                      showDialog(
+                                        context: context,
+                                        barrierDismissible: false,
+                                        builder: (c) => const Center(child: CircularProgressIndicator()),
+                                      );
+                                      final success = await ApiService.cancelBooking(booking['id'].toString());
+                                      if (context.mounted) {
+                                        Navigator.pop(context); // Tắt loading
+                                        if (success) {
+                                          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Đã hủy lịch đặt thành công'), backgroundColor: Colors.teal));
+                                          _loadHistory();
+                                        } else {
+                                          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Hủy lịch thất bại. Vui lòng thử lại!'), backgroundColor: Colors.red));
+                                        }
+                                      }
+                                    },
+                                    style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+                                    child: const Text('Có, Hủy', style: TextStyle(color: Colors.white)),
+                                  ),
+                                ],
+                              );
+                            },
+                          );
+                        },
+                        icon: const Icon(Icons.cancel_outlined, color: Colors.red),
+                        label: const Text('Hủy lịch đặt', style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
+                        style: OutlinedButton.styleFrom(
+                          side: const BorderSide(color: Colors.red, width: 1),
+                          backgroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                        ),
+                      ),
+                    ),
+                  ] else if (isWashing) ...[
+                    const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 16),
+                      child: Divider(height: 1, color: Color(0xFFF1F5F9)),
+                    ),
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      decoration: BoxDecoration(
+                        color: Colors.grey.shade100,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: const Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.lock_outline, color: Colors.grey, size: 18),
+                          SizedBox(width: 8),
+                          Text('Không thể hủy khi đang rửa', style: TextStyle(color: Colors.grey, fontWeight: FontWeight.bold)),
+                        ],
+                      )
+                    )
+                  ]
                 ],
               ),
-              Text(
-                price, 
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold, 
-                  color: Colors.black,
-                )
-              ),
-            ],
-          ),
-          if (canCancel) ...[
-            const SizedBox(height: 16),
-            SizedBox(
-              width: double.infinity,
-              child: OutlinedButton.icon(
-                onPressed: () {
-                  showDialog(
-                    context: context,
-                    builder: (BuildContext ctx) {
-                      return AlertDialog(
-                        title: const Text('Hủy lịch đặt', style: TextStyle(color: Color(0xFF0F2050))),
-                        content: const Text('Bạn có chắc chắn muốn hủy lịch đặt này không? Hành động này không thể hoàn tác.'),
-                        actions: [
-                          TextButton(
-                            onPressed: () => Navigator.pop(ctx),
-                            child: const Text('Không', style: TextStyle(color: Colors.grey)),
-                          ),
-                          ElevatedButton(
-                            onPressed: () async {
-                              Navigator.pop(ctx);
-                              showDialog(
-                                context: context,
-                                barrierDismissible: false,
-                                builder: (c) => const Center(child: CircularProgressIndicator()),
-                              );
-                              final success = await ApiService.cancelBooking(booking['id'].toString());
-                              if (context.mounted) {
-                                Navigator.pop(context); // Tắt loading
-                                if (success) {
-                                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Đã hủy lịch đặt thành công'), backgroundColor: Colors.teal));
-                                  _loadHistory();
-                                } else {
-                                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Hủy lịch thất bại. Vui lòng thử lại!'), backgroundColor: Colors.red));
-                                }
-                              }
-                            },
-                            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-                            child: const Text('Có, Hủy', style: TextStyle(color: Colors.white)),
-                          ),
-                        ],
-                      );
-                    },
-                  );
-                },
-                icon: const Icon(Icons.cancel_outlined, color: Colors.red),
-                label: const Text('Hủy lịch đặt', style: TextStyle(color: Colors.red)),
-                style: OutlinedButton.styleFrom(
-                  side: const BorderSide(color: Colors.red),
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            ),
+            Positioned(
+              top: 0,
+              right: 0,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                decoration: BoxDecoration(
+                  color: isWashing ? Colors.amber.shade500 : Colors.blue.shade500,
+                  borderRadius: const BorderRadius.only(
+                    bottomLeft: Radius.circular(16),
+                  ),
+                ),
+                child: Text(
+                  status.toUpperCase(),
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 10,
+                    fontWeight: FontWeight.w900,
+                  ),
                 ),
               ),
             ),
-          ]
-        ],
+          ],
+        ),
       ),
     );
   }
