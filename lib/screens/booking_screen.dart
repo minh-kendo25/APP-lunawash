@@ -4,6 +4,8 @@ import 'dart:convert';
 import 'dart:async';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:geolocator/geolocator.dart';
+import 'dart:math' as math;
 import 'main_layout.dart';
 import '../services/api_service.dart';
 
@@ -36,6 +38,7 @@ class _BookingScreenState extends State<BookingScreen> {
   List<dynamic> _mainPackages = [];
   List<dynamic> _addOnServices = [];
   bool _isLoadingServices = true;
+  bool _isFindingLocation = false;
 
   @override
   void initState() {
@@ -75,6 +78,86 @@ class _BookingScreenState extends State<BookingScreen> {
           _selectedSavedVehicleIndex = 0;
         }
       });
+    }
+  }
+
+  double _calculateDistance(double lat1, double lon1, double lat2, double lon2) {
+    const double r = 6371; // Bán kính trái đất km
+    final double dLat = (lat2 - lat1) * (math.pi / 180);
+    final double dLon = (lon2 - lon1) * (math.pi / 180);
+    final double a = math.sin(dLat / 2) * math.sin(dLat / 2) +
+        math.cos(lat1 * (math.pi / 180)) * math.cos(lat2 * (math.pi / 180)) *
+        math.sin(dLon / 2) * math.sin(dLon / 2);
+    final double c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a));
+    return r * c;
+  }
+
+  Future<void> _handleFindNearestBranch() async {
+    bool serviceEnabled;
+    LocationPermission permission;
+
+    setState(() {
+      _isFindingLocation = true;
+    });
+
+    try {
+      serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!serviceEnabled) {
+        throw Exception('Location services are disabled.');
+      }
+
+      permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+        if (permission == LocationPermission.denied) {
+          throw Exception('Location permissions are denied');
+        }
+      }
+
+      if (permission == LocationPermission.deniedForever) {
+        throw Exception('Location permissions are permanently denied, we cannot request permissions.');
+      }
+
+      Position position = await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.high);
+      
+      double minDistance = double.infinity;
+      int nearestIndex = 0;
+
+      for (int i = 0; i < 5; i++) {
+        double dist = _calculateDistance(position.latitude, position.longitude, _getBranchLat(i), _getBranchLng(i));
+        if (dist < minDistance) {
+          minDistance = dist;
+          nearestIndex = i;
+        }
+      }
+
+      if (mounted) {
+        setState(() {
+          _selectedBranchIndex = nearestIndex;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Đã chọn chi nhánh gần nhất: ${_getBranchName(nearestIndex)} (${minDistance.toStringAsFixed(1)}km)'),
+            backgroundColor: Colors.green,
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Không thể lấy vị trí. Vui lòng kiểm tra quyền truy cập.'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isFindingLocation = false;
+        });
+      }
     }
   }
 
@@ -299,8 +382,39 @@ class _BookingScreenState extends State<BookingScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Chọn chi nhánh
-                  const Text('Chọn chi nhánh', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text('Chọn chi nhánh', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                      GestureDetector(
+                        onTap: _isFindingLocation ? null : _handleFindNearestBranch,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF4EE1F1).withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: const Color(0xFF4EE1F1).withOpacity(0.5)),
+                          ),
+                          child: Row(
+                            children: [
+                              _isFindingLocation
+                                  ? const SizedBox(
+                                      width: 14,
+                                      height: 14,
+                                      child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFF0F2050)),
+                                    )
+                                  : const Icon(Icons.my_location, size: 14, color: Color(0xFF0F2050)),
+                              const SizedBox(width: 4),
+                              Text(
+                                _isFindingLocation ? 'Đang tìm...' : 'Gợi ý trạm gần nhất',
+                                style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF0F2050)),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                   const SizedBox(height: 16),
                   GestureDetector(
                     onTap: () => _showBranchPickerBottomSheet(context),
@@ -1628,6 +1742,49 @@ class _BookingScreenState extends State<BookingScreen> {
       'Chi nhánh Quận 12 trang bị máy sấy phản lực gió siêu tốc và quy trình rửa gầm chuyên sâu, tối ưu cho dòng xe SUV và xe bán tải.',
     ];
     return descriptions[index];
+  }
+
+  double _getBranchLat(int index) {
+    List<double> lats = [10.852445, 10.772564, 10.729351, 10.801648, 10.861789];
+    return lats[index];
+  }
+
+  double _getBranchLng(int index) {
+    List<double> lngs = [106.748364, 106.698047, 106.702983, 106.640954, 106.657512];
+    return lngs[index];
+  }
+
+  double _calculateDistance(double lat1, double lon1, double lat2, double lon2) {
+    var p = 0.017453292519943295;
+    var c = cos;
+    var a = 0.5 - c((lat2 - lat1) * p) / 2 + c(lat1 * p) * c(lat2 * p) * (1 - c((lon2 - lon1) * p)) / 2;
+    return 12742 * asin(sqrt(a));
+  }
+
+  Future<void> _handleFindNearestBranch() async {
+    setState(() => isFindingLocation = true);
+    try {
+      Position position = await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.high);
+      double minDistance = double.infinity;
+      int nearestIndex = 0;
+      for (int i = 0; i < 5; i++) {
+        double distance = _calculateDistance(position.latitude, position.longitude, _getBranchLat(i), _getBranchLng(i));
+        if (distance < minDistance) {
+          minDistance = distance;
+          nearestIndex = i;
+        }
+      }
+      setState(() {
+        _selectedBranchIndex = nearestIndex;
+        _selectedStationIndex = 0;
+        _selectedTimeSlotIndex = -1;
+      });
+      _fetchOccupiedSlots();
+    } catch (e) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Không thể lấy vị trí hiện tại')));
+    } finally {
+      setState(() => isFindingLocation = false);
+    }
   }
 
   String _getBranchHours(int index) {

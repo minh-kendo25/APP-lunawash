@@ -66,6 +66,10 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Ứng dụng cần quyền truy cập vị trí để gợi ý chi nhánh LunaWash gần bạn nhất.</string>
+	<key>NSLocationAlwaysUsageDescription</key>
+	<string>Ứng dụng cần quyền truy cập vị trí để gợi ý chi nhánh LunaWash gần bạn nhất.</string>
 	<key>CFBundleURLTypes</key>
 	<array>
 		<dict>
