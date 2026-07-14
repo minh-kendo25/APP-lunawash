@@ -49,9 +49,12 @@ class _HistoryScreenState extends State<HistoryScreen> {
       backgroundColor: const Color(0xFFF8F9FA),
       body: _isLoading 
           ? const Center(child: CircularProgressIndicator())
-          : SingleChildScrollView(
-              padding: const EdgeInsets.all(16),
-              child: Column(
+          : RefreshIndicator(
+              onRefresh: _loadHistory,
+              child: SingleChildScrollView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                padding: const EdgeInsets.all(16),
+                child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // Đang diễn ra
