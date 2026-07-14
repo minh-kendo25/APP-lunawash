@@ -182,94 +182,92 @@ class _HistoryScreenState extends State<HistoryScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Expanded(
-                        child: Text(title.toUpperCase(), style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 16, color: Color(0xFF0F2050))),
-                      ),
-                      const SizedBox(width: 80), // Space for badge
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.end,
-                        children: [
-                          Text(price, style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 16, color: Color(0xFF0F2050))),
-                          const Text('Thanh toán tại quầy', style: TextStyle(fontSize: 10, color: Colors.black54)),
-                        ],
-                      ),
-                    ],
+                  Container(
+                    margin: const EdgeInsets.only(right: 70), // Leave space for badge
+                    child: Text(title.toUpperCase(), style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 16, color: Color(0xFF0F2050))),
                   ),
+                  const SizedBox(height: 8),
+                  Text(price, style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 18, color: Color(0xFF0F2050))),
+                  const Text('Thanh toán tại quầy', style: TextStyle(fontSize: 11, color: Colors.black54)),
+                  
                   const Padding(
                     padding: EdgeInsets.symmetric(vertical: 16),
                     child: Divider(height: 1, color: Color(0xFFF1F5F9)),
                   ),
+                  
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                      const Icon(Icons.location_on_outlined, size: 18, color: Color(0xFF0F2050)),
+                      const SizedBox(width: 12),
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Row(
-                              children: [
-                                const Icon(Icons.location_on_outlined, size: 18, color: Color(0xFF0F2050)),
-                                const SizedBox(width: 8),
-                                const Text('Chi nhánh', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
-                              ],
-                            ),
-                            Padding(
-                              padding: const EdgeInsets.only(left: 26, top: 2),
-                              child: Text(branch, style: TextStyle(fontSize: 12, color: Colors.grey.shade600)),
-                            ),
-                            const SizedBox(height: 12),
-                            Row(
-                              children: [
-                                const Icon(Icons.access_time, size: 18, color: Color(0xFF0F2050)),
-                                const SizedBox(width: 8),
-                                const Text('Khung giờ (Dự kiến)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
-                              ],
-                            ),
-                            Padding(
-                              padding: const EdgeInsets.only(left: 26, top: 4),
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                decoration: BoxDecoration(
-                                  color: Colors.blue.shade50,
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                child: Text(time, style: TextStyle(fontSize: 11, color: Colors.blue.shade700, fontWeight: FontWeight.bold)),
+                            const Text('Chi nhánh', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                            const SizedBox(height: 2),
+                            Text(branch, style: TextStyle(fontSize: 12, color: Colors.black87)),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Icon(Icons.local_car_wash_outlined, size: 18, color: Color(0xFF0F2050)),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text('Trạm rửa', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                            const SizedBox(height: 2),
+                            Text(slotName, style: TextStyle(fontSize: 12, color: Colors.black87)),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Icon(Icons.access_time, size: 18, color: Color(0xFF0F2050)),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text('Khung giờ (Dự kiến)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                            const SizedBox(height: 4),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: Colors.blue.shade50,
+                                borderRadius: BorderRadius.circular(12),
                               ),
+                              child: Text(time, style: TextStyle(fontSize: 11, color: Colors.blue.shade700, fontWeight: FontWeight.bold)),
                             ),
                           ],
                         ),
                       ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Icon(Icons.directions_car_outlined, size: 18, color: Color(0xFF0F2050)),
+                      const SizedBox(width: 12),
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Row(
-                              children: [
-                                const Icon(Icons.local_car_wash_outlined, size: 18, color: Color(0xFF0F2050)),
-                                const SizedBox(width: 8),
-                                const Text('Trạm rửa', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
-                              ],
-                            ),
-                            Padding(
-                              padding: const EdgeInsets.only(left: 26, top: 2),
-                              child: Text(slotName, style: TextStyle(fontSize: 12, color: Colors.grey.shade600)),
-                            ),
-                            const SizedBox(height: 12),
-                            Row(
-                              children: [
-                                const Icon(Icons.directions_car_outlined, size: 18, color: Color(0xFF0F2050)),
-                                const SizedBox(width: 8),
-                                const Text('Phương tiện', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
-                              ],
-                            ),
-                            Padding(
-                              padding: const EdgeInsets.only(left: 26, top: 2),
-                              child: Text(car, style: TextStyle(fontSize: 12, color: Colors.grey.shade600)),
-                            ),
+                            const Text('Phương tiện', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                            const SizedBox(height: 2),
+                            Text(car, style: TextStyle(fontSize: 12, color: Colors.black87)),
                           ],
                         ),
                       ),
