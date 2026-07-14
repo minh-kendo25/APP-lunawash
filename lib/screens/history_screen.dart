@@ -334,7 +334,14 @@ class _HistoryScreenState extends State<HistoryScreen> {
                         overflow: TextOverflow.ellipsis,
                       ),
                     ),
-                    Text(status, style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: statusColor)),
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(status, style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: statusColor)),
+                        const SizedBox(width: 4),
+                        Icon(Icons.info_outline, size: 14, color: isCancelled ? Colors.grey : Colors.blueAccent),
+                      ],
+                    ),
                   ],
                 ),
                 const SizedBox(height: 4),
