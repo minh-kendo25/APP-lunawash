@@ -376,18 +376,14 @@ class _HomeScreenState extends State<HomeScreen> {
                   Text(
                     description,
                     style: const TextStyle(fontSize: 11, color: Colors.black54),
-                    maxLines: 1,
+                    maxLines: 3,
                     overflow: TextOverflow.ellipsis,
                   ),
                   const SizedBox(height: 8),
-                  const Divider(),
-                  const SizedBox(height: 4),
-                  Expanded(
-                    child: ListView.builder(
-                      physics: const NeverScrollableScrollPhysics(),
-                      itemCount: features.length > 2 ? 2 : features.length, // Show max 2 features to fit
-                      itemBuilder: (context, idx) {
-                        return Padding(
+                  if (features.isNotEmpty) ...[
+                    const Divider(height: 1),
+                    const SizedBox(height: 8),
+                    ...features.take(2).map((f) => Padding(
                           padding: const EdgeInsets.only(bottom: 4.0),
                           child: Row(
                             children: [
@@ -395,7 +391,7 @@ class _HomeScreenState extends State<HomeScreen> {
                               const SizedBox(width: 6),
                               Expanded(
                                 child: Text(
-                                  features[idx]['featureText'] ?? '',
+                                  f['featureText'] ?? '',
                                   style: const TextStyle(fontSize: 11, color: Colors.black87),
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
@@ -403,11 +399,9 @@ class _HomeScreenState extends State<HomeScreen> {
                               ),
                             ],
                           ),
-                        );
-                      },
-                    ),
-                  ),
-                  const SizedBox(height: 4),
+                        )),
+                  ],
+                  const Spacer(),
                   Text(
                     _formatCurrency(price),
                     style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF0F2050)),
