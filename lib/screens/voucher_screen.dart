@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import '../services/api_service.dart';
 
 class VoucherScreen extends StatefulWidget {
@@ -34,7 +35,13 @@ class _VoucherScreenState extends State<VoucherScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFFF8F9FA),
       appBar: AppBar(
-        title: const Text('Ví Mã Giảm Giá', style: TextStyle(color: Color(0xFF0F2050), fontWeight: FontWeight.bold)),
+        title: const Text(
+          'Ví Mã Giảm Giá',
+          style: TextStyle(
+            color: Color(0xFF0F2050),
+            fontWeight: FontWeight.bold,
+          ),
+        ),
         backgroundColor: Colors.white,
         elevation: 1,
         iconTheme: const IconThemeData(color: Color(0xFF0F2050)),
@@ -70,11 +77,19 @@ class _VoucherScreenState extends State<VoucherScreen> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.local_activity_outlined, size: 80, color: Colors.grey[400]),
+          Icon(
+            Icons.local_activity_outlined,
+            size: 80,
+            color: Colors.grey[400],
+          ),
           const SizedBox(height: 16),
           const Text(
             'Ví voucher trống',
-            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF0F2050)),
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              color: Color(0xFF0F2050),
+            ),
           ),
           const SizedBox(height: 8),
           const Text(
@@ -87,7 +102,34 @@ class _VoucherScreenState extends State<VoucherScreen> {
     );
   }
 
-  Widget _buildVoucherCard(Map<String, dynamic> voucher, int index) {
+  Widget _buildVoucherCard(Map<String, dynamic> rawData, int index) {
+    // Extract nested voucher object from CustomerVoucherDto
+    final voucher = rawData['voucher'] ?? {};
+
+    // Support both API response structure and fallback local storage structure
+    final title = voucher['voucherName'] ?? rawData['title'] ?? 'Mã giảm giá';
+    final code =
+        voucher['id'] ??
+        rawData['code'] ??
+        rawData['voucherId'] ??
+        'Không rõ mã';
+    final desc = voucher['description'] ?? rawData['subtitle'] ?? '';
+
+    String subtitle = desc;
+    if (voucher['expiryDate'] != null) {
+      try {
+        final DateTime expiry = DateTime.parse(voucher['expiryDate']).toLocal();
+        final DateFormat formatter = DateFormat('dd/MM/yyyy');
+        subtitle +=
+            (subtitle.isNotEmpty ? '\n' : '') +
+            'HSD: ${formatter.format(expiry)}';
+      } catch (e) {
+        // Ignore parse error
+      }
+    } else if (rawData['subtitle'] == null) {
+      subtitle += (subtitle.isNotEmpty ? '\n' : '') + 'HSD: Không giới hạn';
+    }
+
     return Card(
       elevation: 2,
       margin: const EdgeInsets.only(bottom: 16),
@@ -107,30 +149,54 @@ class _VoucherScreenState extends State<VoucherScreen> {
             Container(
               padding: const EdgeInsets.all(20),
               decoration: const BoxDecoration(
-                border: Border(right: BorderSide(color: Colors.white24, width: 1, style: BorderStyle.solid)),
+                border: Border(
+                  right: BorderSide(
+                    color: Colors.white24,
+                    width: 1,
+                    style: BorderStyle.solid,
+                  ),
+                ),
               ),
-              child: const Icon(Icons.percent_rounded, color: Color(0xFF4EE1F1), size: 40),
+              child: const Icon(
+                Icons.percent_rounded,
+                color: Color(0xFF4EE1F1),
+                size: 40,
+              ),
             ),
             // Right info part
             Expanded(
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 20,
+                ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      voucher['title'] ?? 'Mã giảm giá',
-                      style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+                      title,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      'Mã: ${voucher['code']}',
-                      style: const TextStyle(color: Color(0xFF4EE1F1), fontSize: 14, fontWeight: FontWeight.bold),
+                      'Mã: $code',
+                      style: const TextStyle(
+                        color: Color(0xFF4EE1F1),
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      voucher['subtitle'] ?? 'HSD: Không giới hạn',
-                      style: const TextStyle(color: Colors.white70, fontSize: 12),
+                      subtitle,
+                      style: const TextStyle(
+                        color: Colors.white70,
+                        fontSize: 12,
+                      ),
                     ),
                   ],
                 ),
