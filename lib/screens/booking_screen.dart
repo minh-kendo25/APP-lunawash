@@ -2104,7 +2104,7 @@ class _BookingScreenState extends State<BookingScreen> {
                                             MaterialPageRoute(
                                               builder: (context) =>
                                                   const MainLayout(
-                                                    initialIndex: 1,
+                                                    initialIndex: 2,
                                                   ),
                                             ),
                                             (route) => false,
@@ -2799,7 +2799,7 @@ class _VnPayDialogState extends State<_VnPayDialog> {
               Navigator.pushAndRemoveUntil(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => const MainLayout(initialIndex: 1),
+                  builder: (context) => const MainLayout(initialIndex: 2),
                 ),
                 (route) => false,
               );
