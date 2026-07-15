@@ -16,19 +16,22 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   List<dynamic> _mainPackages = [];
+  List<dynamic> _banners = [];
   bool _isLoading = true;
 
   @override
   void initState() {
     super.initState();
-    _loadServices();
+    _loadData();
   }
 
-  Future<void> _loadServices() async {
+  Future<void> _loadData() async {
     try {
       final services = await ApiService.fetchServices();
+      final banners = await ApiService.fetchBanners();
       setState(() {
         _mainPackages = services.where((s) => s['serviceType'] == 'Package').toList();
+        _banners = banners.where((b) => b['isHidden'] != true).toList();
         _isLoading = false;
       });
     } catch (e) {
@@ -39,6 +42,32 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _saveVoucher(Map<String, dynamic> voucherData) async {
+    // If voucherData contains a voucherId, we use ApiService to save it
+    if (voucherData['voucherId'] != null) {
+      final result = await ApiService.saveVoucher(voucherData['voucherId']);
+      if (!mounted) return;
+      if (result['error'] != null) {
+        if (result['error'] == 'Unauthorized') {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Vui lòng đăng nhập để lưu mã giảm giá!')),
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(result['error'])),
+          );
+        }
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(result['message'] ?? 'Lưu mã giảm giá thành công!'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+      return;
+    }
+
+    // Fallback cho mã tĩnh nếu không có voucherId thực tế từ DB
     final prefs = await SharedPreferences.getInstance();
     List<String> savedVouchers = prefs.getStringList('saved_vouchers') ?? [];
     
@@ -68,6 +97,40 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  void _showSaveVoucherDialog(Map<String, dynamic> voucherData) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Row(
+            children: [
+              Icon(Icons.local_activity, color: Colors.green),
+              SizedBox(width: 8),
+              Text('Lưu mã giảm giá?'),
+            ],
+          ),
+          content: const Text('Banner này có đính kèm một mã giảm giá. Bạn có muốn lưu mã này vào ví của mình để sử dụng sau không?'),
+          actions: <Widget>[
+            TextButton(
+              child: const Text('Không, cảm ơn', style: TextStyle(color: Colors.grey)),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF0F2050)),
+              child: const Text('Lưu vào ví', style: TextStyle(color: Colors.white)),
+              onPressed: () {
+                Navigator.of(context).pop();
+                _saveVoucher(voucherData);
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   String _formatCurrency(int amount) {
     final format = NumberFormat.currency(locale: 'vi_VN', symbol: 'đ');
     return format.format(amount);
@@ -77,11 +140,14 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF8F9FA),
-      body: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Hero Banner
+      body: RefreshIndicator(
+        onRefresh: _loadData,
+        child: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Hero Banner
             Stack(
               children: [
                 Container(
@@ -177,37 +243,63 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
             
-            SizedBox(
-              height: 140,
-              child: ListView(
-                scrollDirection: Axis.horizontal,
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                children: [
-                  _buildPromoCard(
-                    title: 'Giảm 20% lần đầu', 
-                    subtitle: 'Nhập mã: LUNANEW', 
-                    bgColor: const Color(0xFF0F2050),
-                    voucherData: {
-                      'code': 'LUNANEW',
-                      'title': 'Giảm 20% lần đầu',
-                      'subtitle': 'Dành cho khách hàng mới',
-                      'discount': 20,
-                    }
-                  ),
-                  _buildPromoCard(
-                    title: 'Giảm 50K thứ 3', 
-                    subtitle: 'Nhập mã: TUESDAY50', 
-                    bgColor: const Color(0xFF0F2050),
-                    voucherData: {
-                      'code': 'TUESDAY50',
-                      'title': 'Giảm 50K thứ 3',
-                      'subtitle': 'Áp dụng cho ngày thứ 3 hàng tuần',
-                      'discountAmount': 50000,
-                    }
-                  ),
-                ],
+            if (_banners.isNotEmpty)
+              SizedBox(
+                height: 140,
+                child: ListView.builder(
+                  scrollDirection: Axis.horizontal,
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  itemCount: _banners.length,
+                  itemBuilder: (context, index) {
+                    final b = _banners[index];
+                    return _buildDynamicPromoCard(
+                      imageUrl: b['imageUrl'] ?? '',
+                      voucherId: b['voucherId'],
+                      onTap: () {
+                        if (b['voucherId'] != null) {
+                          _showSaveVoucherDialog({
+                            'voucherId': b['voucherId']
+                          });
+                        } else {
+                          widget.onNavigate?.call(1);
+                        }
+                      }
+                    );
+                  },
+                ),
+              )
+            else
+              SizedBox(
+                height: 140,
+                child: ListView(
+                  scrollDirection: Axis.horizontal,
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  children: [
+                    _buildPromoCard(
+                      title: 'Giảm 20% lần đầu', 
+                      subtitle: 'Nhập mã: LUNANEW', 
+                      bgColor: const Color(0xFF0F2050),
+                      voucherData: {
+                        'code': 'LUNANEW',
+                        'title': 'Giảm 20% lần đầu',
+                        'subtitle': 'Dành cho khách hàng mới',
+                        'discount': 20,
+                      }
+                    ),
+                    _buildPromoCard(
+                      title: 'Giảm 50K thứ 3', 
+                      subtitle: 'Nhập mã: TUESDAY50', 
+                      bgColor: const Color(0xFF0F2050),
+                      voucherData: {
+                        'code': 'TUESDAY50',
+                        'title': 'Giảm 50K thứ 3',
+                        'subtitle': 'Áp dụng cho ngày thứ 3 hàng tuần',
+                        'discountAmount': 50000,
+                      }
+                    ),
+                  ],
+                ),
               ),
-            ),
 
             // Các gói dịch vụ
             Padding(
@@ -275,7 +367,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildPromoCard({required String title, required String subtitle, required Color bgColor, required Map<String, dynamic> voucherData}) {
     return GestureDetector(
-      onTap: () => _saveVoucher(voucherData),
+      onTap: () => _showSaveVoucherDialog(voucherData),
       child: Container(
         width: 240,
         margin: const EdgeInsets.only(right: 12),
@@ -312,6 +404,36 @@ class _HomeScreenState extends State<HomeScreen> {
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildDynamicPromoCard({required String imageUrl, String? voucherId, required VoidCallback onTap}) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: 240,
+        margin: const EdgeInsets.only(right: 12),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(16),
+          color: const Color(0xFF0F2050),
+          image: DecorationImage(
+            image: NetworkImage(imageUrl),
+            fit: BoxFit.cover,
+          ),
+        ),
+        child: voucherId != null ? Align(
+          alignment: Alignment.bottomRight,
+          child: Container(
+            margin: const EdgeInsets.all(8),
+            padding: const EdgeInsets.all(6),
+            decoration: BoxDecoration(
+              color: Colors.black54,
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: const Icon(Icons.local_activity, color: Colors.white, size: 16),
+          ),
+        ) : null,
       ),
     );
   }

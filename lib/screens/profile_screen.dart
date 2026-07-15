@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import '../services/api_service.dart';
 import 'login_screen.dart';
 
@@ -18,6 +19,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   int _points = 0;
   String _tierName = 'ĐỒNG';
   List<dynamic> _cars = [];
+  List<dynamic> _membershipTiers = [];
 
   final List<Map<String, String>> _vehicleTypes = [
     {'id': 'VT-OTO-2C', 'name': 'Ô tô 2 chỗ'},
@@ -37,6 +39,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     try {
       final profile = await ApiService.getUserProfile();
       final vehicles = await ApiService.getMyVehicles();
+      final tiers = await ApiService.getMembershipSettings();
 
       if (mounted) {
         setState(() {
@@ -50,6 +53,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             _tierName = profile['loyalty']?['tierName'] ?? 'ĐỒNG';
           }
           _cars = vehicles;
+          _membershipTiers = tiers;
           _isLoading = false;
         });
       }
@@ -84,10 +88,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
       ),
       body: _isLoading 
           ? const Center(child: CircularProgressIndicator())
-          : SingleChildScrollView(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                children: [
+          : RefreshIndicator(
+              onRefresh: _loadData,
+              child: SingleChildScrollView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  children: [
             // Avatar & Name
             Center(
               child: Column(
@@ -593,14 +600,26 @@ class _ProfileScreenState extends State<ProfileScreen> {
           child: Column(
             children: [
               _buildTableRow('Hạng thành viên', 'Điều kiện lên hạng', isHeader: true),
-              const Divider(height: 1, thickness: 1, color: Color(0xFFF3F4F6)),
-              _buildTableRow('ĐỒNG', 'Mặc định'),
-              const Divider(height: 1, thickness: 1, color: Color(0xFFF3F4F6)),
-              _buildTableRow('BẠC', 'Từ 1.000 pt'),
-              const Divider(height: 1, thickness: 1, color: Color(0xFFF3F4F6)),
-              _buildTableRow('VÀNG', 'Từ 3.000 pt'),
-              const Divider(height: 1, thickness: 1, color: Color(0xFFF3F4F6)),
-              _buildTableRow('PLATINUM', 'Từ 5.000 pt'),
+              if (_membershipTiers.isEmpty) ...[
+                const Divider(height: 1, thickness: 1, color: Color(0xFFF3F4F6)),
+                _buildTableRow('ĐỒNG', 'Mặc định'),
+                const Divider(height: 1, thickness: 1, color: Color(0xFFF3F4F6)),
+                _buildTableRow('BẠC', 'Từ 1.000 pt'),
+                const Divider(height: 1, thickness: 1, color: Color(0xFFF3F4F6)),
+                _buildTableRow('VÀNG', 'Từ 3.000 pt'),
+                const Divider(height: 1, thickness: 1, color: Color(0xFFF3F4F6)),
+                _buildTableRow('PLATINUM', 'Từ 5.000 pt'),
+              ] else ..._membershipTiers.map((tier) {
+                final String name = (tier['tierName'] ?? '').toString().toUpperCase();
+                final int points = tier['minPoints'] ?? 0;
+                final String condition = points <= 0 ? 'Mặc định' : 'Từ ${NumberFormat.decimalPattern('vi_VN').format(points)} pt';
+                return Column(
+                  children: [
+                    const Divider(height: 1, thickness: 1, color: Color(0xFFF3F4F6)),
+                    _buildTableRow(name, condition),
+                  ],
+                );
+              }).toList(),
             ],
           ),
         ),

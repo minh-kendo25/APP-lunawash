@@ -24,6 +24,92 @@ class ApiService {
     }
   }
 
+  static Future<List<dynamic>> fetchBanners() async {
+    try {
+      final response = await http.get(Uri.parse('$baseUrl/banners?platform=App'));
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        if (data['success'] == true) {
+          return data['data'] ?? [];
+        }
+        return [];
+      } else {
+        return [];
+      }
+    } catch (e) {
+      return [];
+    }
+  }
+
+  static Future<Map<String, dynamic>> saveVoucher(String voucherId) async {
+    try {
+      final token = await getToken();
+      if (token == null) return {'error': 'Unauthorized'};
+      
+      final response = await http.post(
+        Uri.parse('$baseUrl/vouchers/save/$voucherId'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
+      
+      final data = json.decode(response.body);
+      if (response.statusCode == 200 && data['success'] == true) {
+        return {'success': true, 'message': data['message']};
+      } else {
+        return {'error': data['message'] ?? 'Failed to save voucher'};
+      }
+    } catch (e) {
+      return {'error': 'Network error: $e'};
+    }
+  }
+
+  static Future<List<dynamic>> getMyVouchers() async {
+    try {
+      final token = await getToken();
+      if (token == null) return [];
+      
+      final response = await http.get(
+        Uri.parse('$baseUrl/vouchers/my-vouchers'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
+      
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        if (data['success'] == true) {
+          return data['data'] ?? [];
+        }
+      }
+      return [];
+    } catch (e) {
+      return [];
+    }
+  }
+
+  static Future<List<dynamic>> getMembershipSettings() async {
+    try {
+      final token = await getToken();
+      final response = await http.get(
+        Uri.parse('$baseUrl/Membership/settings'),
+        headers: {
+          'Content-Type': 'application/json',
+          if (token != null) 'Authorization': 'Bearer $token',
+        },
+      );
+      
+      if (response.statusCode == 200) {
+        return json.decode(response.body);
+      }
+      return [];
+    } catch (e) {
+      return [];
+    }
+  }
+
   static Future<List<dynamic>> getVehicles() async {
     try {
       final token = await getToken();

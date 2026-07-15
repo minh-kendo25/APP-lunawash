@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
-import 'dart:convert';
-import 'package:shared_preferences/shared_preferences.dart';
+import '../services/api_service.dart';
 
 class VoucherScreen extends StatefulWidget {
   const VoucherScreen({super.key});
@@ -20,40 +19,13 @@ class _VoucherScreenState extends State<VoucherScreen> {
   }
 
   Future<void> _loadVouchers() async {
-    final prefs = await SharedPreferences.getInstance();
-    final List<String>? savedVouchers = prefs.getStringList('saved_vouchers');
-    
-    if (savedVouchers != null) {
+    setState(() => _isLoading = true);
+    final data = await ApiService.getMyVouchers();
+    if (mounted) {
       setState(() {
-        _vouchers = savedVouchers
-            .map((e) => json.decode(e) as Map<String, dynamic>)
-            .toList();
+        _vouchers = data.cast<Map<String, dynamic>>();
         _isLoading = false;
       });
-    } else {
-      setState(() {
-        _vouchers = [];
-        _isLoading = false;
-      });
-    }
-  }
-
-  Future<void> _removeVoucher(int index) async {
-    final prefs = await SharedPreferences.getInstance();
-    List<String>? savedVouchers = prefs.getStringList('saved_vouchers');
-    
-    if (savedVouchers != null) {
-      savedVouchers.removeAt(index);
-      await prefs.setStringList('saved_vouchers', savedVouchers);
-      
-      setState(() {
-        _vouchers.removeAt(index);
-      });
-      
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Đã xoá mã giảm giá')),
-      );
     }
   }
 
@@ -69,16 +41,27 @@ class _VoucherScreenState extends State<VoucherScreen> {
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
-          : _vouchers.isEmpty
-              ? _buildEmptyState()
-              : ListView.builder(
-                  padding: const EdgeInsets.all(16),
-                  itemCount: _vouchers.length,
-                  itemBuilder: (context, index) {
-                    final voucher = _vouchers[index];
-                    return _buildVoucherCard(voucher, index);
-                  },
-                ),
+          : RefreshIndicator(
+              onRefresh: _loadVouchers,
+              child: _vouchers.isEmpty
+                  ? SingleChildScrollView(
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      child: Container(
+                        height: MediaQuery.of(context).size.height * 0.7,
+                        alignment: Alignment.center,
+                        child: _buildEmptyState(),
+                      ),
+                    )
+                  : ListView.builder(
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      padding: const EdgeInsets.all(16),
+                      itemCount: _vouchers.length,
+                      itemBuilder: (context, index) {
+                        final voucher = _vouchers[index];
+                        return _buildVoucherCard(voucher, index);
+                      },
+                    ),
+            ),
     );
   }
 
@@ -152,11 +135,6 @@ class _VoucherScreenState extends State<VoucherScreen> {
                   ],
                 ),
               ),
-            ),
-            // Delete button
-            IconButton(
-              icon: const Icon(Icons.delete_outline, color: Colors.white54),
-              onPressed: () => _removeVoucher(index),
             ),
           ],
         ),
