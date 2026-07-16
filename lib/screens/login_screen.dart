@@ -55,6 +55,13 @@ class _LoginScreenState extends State<LoginScreen> {
         SnackBar(content: Text(result['error'] ?? 'Đăng nhập thất bại')),
       );
     } else {
+      if (result['role'] == 'Admin') {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Tài khoản ADMIN chỉ được phép đăng nhập trên máy tính tại cơ quan!')),
+        );
+        return;
+      }
+
       if (result['token'] != null) {
         await ApiService.saveToken(result['token']);
       }
@@ -106,6 +113,13 @@ class _LoginScreenState extends State<LoginScreen> {
             SnackBar(content: Text(result['error'] ?? 'Đăng nhập thất bại')),
           );
         } else {
+          if (result['role'] == 'Admin') {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Tài khoản ADMIN chỉ được phép đăng nhập trên máy tính tại cơ quan!')),
+            );
+            return;
+          }
+
           if (result['token'] != null) {
             await ApiService.saveToken(result['token']);
           }
