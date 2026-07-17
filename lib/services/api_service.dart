@@ -136,7 +136,9 @@ class ApiService {
         Uri.parse('$baseUrl/auth/login'),
         headers: {'Content-Type': 'application/json'},
         body: json.encode({'email': email, 'password': password}),
-      );
+      ).timeout(const Duration(seconds: 45), onTimeout: () {
+        throw Exception('Server đang khởi động hoặc mạng yếu, vui lòng đợi 1 phút và thử lại.');
+      });
       
       if (response.statusCode == 200) {
         return json.decode(response.body);
@@ -144,7 +146,7 @@ class ApiService {
         return {'error': 'Login failed: ${response.statusCode}'};
       }
     } catch (e) {
-      return {'error': 'Network error: $e'};
+      return {'error': '$e'.replaceAll('Exception: ', '')};
     }
   }
 
