@@ -30,7 +30,7 @@ class ApiService {
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
         if (data['success'] == true) {
-          return data['data'] ?? [];
+          return (data['data'] as List<dynamic>?) ?? [];
         }
         return [];
       } else {
@@ -81,7 +81,7 @@ class ApiService {
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
         if (data['success'] == true) {
-          return data['data'] ?? [];
+          return (data['data'] as List<dynamic>?) ?? [];
         }
       }
       return [];
@@ -439,7 +439,7 @@ class ApiService {
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
-        return data['url'];
+        return data['url']?.toString();
       }
       return null;
     } catch (e) {
@@ -538,7 +538,7 @@ class ApiService {
         String errText = 'Không thể tạo lịch đặt.';
         try {
           final errData = json.decode(response.body);
-          if (errData['message'] != null) errText = errData['message'];
+          if (errData['message'] != null) errText = errData['message'].toString();
         } catch (_) {}
         return {'error': errText};
       }

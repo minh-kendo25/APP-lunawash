@@ -345,7 +345,7 @@ class _AIChatBottomSheetState extends State<_AIChatBottomSheet> {
                 }
                 
                 final msg = _messages[index];
-                return _buildMessageBubble(msg['text'], msg['isUser']);
+                return _buildMessageBubble(msg['text']?.toString() ?? '', msg['isUser'] == true);
               },
             ),
           ),

@@ -107,7 +107,7 @@ class _VoucherScreenState extends State<VoucherScreen> {
     final voucher = rawData['voucher'] ?? {};
 
     // Support both API response structure and fallback local storage structure
-    final title = voucher['voucherName'] ?? rawData['title'] ?? 'Mã giảm giá';
+    final title = (voucher['voucherName'] ?? rawData['title'] ?? 'Mã giảm giá').toString();
     final code =
         voucher['id'] ??
         rawData['code'] ??
@@ -118,7 +118,7 @@ class _VoucherScreenState extends State<VoucherScreen> {
     String subtitle = desc.toString();
     if (voucher['expiryDate'] != null) {
       try {
-        final DateTime expiry = DateTime.parse(voucher['expiryDate']).toLocal();
+        final DateTime expiry = DateTime.parse(voucher['expiryDate'].toString()).toLocal();
         final DateFormat formatter = DateFormat('dd/MM/yyyy');
         subtitle +=
             (subtitle.isNotEmpty ? '\n' : '') +
