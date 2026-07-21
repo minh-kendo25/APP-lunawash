@@ -105,24 +105,31 @@ class _MainLayoutState extends State<MainLayout> {
               filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
               child: Container(
                 decoration: BoxDecoration(
-                  color: Colors.black.withOpacity(0.75),
+                  color: Colors.white.withOpacity(0.8),
                   borderRadius: BorderRadius.circular(40),
-                  border: Border.all(color: Colors.white.withOpacity(0.15)),
+                  border: Border.all(color: Colors.white.withOpacity(0.5)),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.1),
+                      blurRadius: 10,
+                      offset: const Offset(0, 5),
+                    ),
+                  ],
                 ),
                 child: NavigationBarTheme(
                   data: NavigationBarThemeData(
-                    indicatorColor: Colors.white.withOpacity(0.2),
+                    indicatorColor: Colors.transparent,
                     labelTextStyle: MaterialStateProperty.resolveWith((states) {
                       if (states.contains(MaterialState.selected)) {
-                        return const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.white);
+                        return const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF0F2050));
                       }
-                      return const TextStyle(fontSize: 11, fontWeight: FontWeight.normal, color: Colors.white54);
+                      return TextStyle(fontSize: 11, fontWeight: FontWeight.normal, color: const Color(0xFF0F2050).withOpacity(0.5));
                     }),
                     iconTheme: MaterialStateProperty.resolveWith((states) {
                       if (states.contains(MaterialState.selected)) {
-                        return const IconThemeData(color: Colors.white, size: 26);
+                        return const IconThemeData(color: Color(0xFF0F2050), size: 28);
                       }
-                      return const IconThemeData(color: Colors.white54, size: 24);
+                      return IconThemeData(color: const Color(0xFF0F2050).withOpacity(0.5), size: 26);
                     }),
                   ),
                   child: NavigationBar(
