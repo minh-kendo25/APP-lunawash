@@ -105,84 +105,56 @@ class _MainLayoutState extends State<MainLayout> {
               borderRadius: BorderRadius.circular(34),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.10),
-                  blurRadius: 30,
-                  offset: const Offset(0, 8),
+                  color: Colors.black.withOpacity(0.12),
+                  blurRadius: 20,
+                  offset: const Offset(0, 10),
                 ),
               ],
             ),
             child: ClipRRect(
               borderRadius: BorderRadius.circular(34),
               child: BackdropFilter(
-                filter: ImageFilter.blur(sigmaX: 22, sigmaY: 22),
+                filter: ImageFilter.blur(sigmaX: 30, sigmaY: 30),
                 child: Stack(
                   children: [
-                    // Base Glass Gradient
+                    // Base Glass
                     Container(
                       decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.topCenter,
-                          end: Alignment.bottomCenter,
-                          colors: [
-                            Colors.white.withOpacity(0.16),
-                            Colors.white.withOpacity(0.04),
-                          ],
-                        ),
+                        color: Colors.white.withOpacity(0.1),
                       ),
                     ),
-                    // Specular Highlight (Ellipse)
+                    
+                    // Specular Highlight (Water drop top glow)
                     Positioned(
-                      top: -30,
-                      left: -20,
+                      top: -20,
+                      left: 40,
+                      right: 40,
+                      height: 40,
                       child: Container(
-                        width: 120,
-                        height: 120,
                         decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: Colors.white.withOpacity(0.08),
+                          color: Colors.white.withOpacity(0.8),
+                          borderRadius: BorderRadius.circular(50),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.white.withOpacity(0.08),
-                              blurRadius: 60,
-                              spreadRadius: 30,
+                              color: Colors.white.withOpacity(0.8),
+                              blurRadius: 20,
+                              spreadRadius: 5,
                             ),
                           ],
                         ),
                       ),
                     ),
-                    // Top Highlight Gradient (Edge refraction)
-                    Positioned(
-                      top: 0,
-                      left: 0,
-                      right: 0,
-                      height: 15,
-                      child: Container(
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            begin: Alignment.topCenter,
-                            end: Alignment.bottomCenter,
-                            colors: [
-                              Colors.white.withOpacity(0.55),
-                              Colors.white.withOpacity(0.0),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                    // Inner Shadow (Simulated with a faint top-inner border)
+
+                    // Top Highlight Edge & Bottom Refraction
                     Container(
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(34),
                         border: Border(
-                          top: BorderSide(color: Colors.white.withOpacity(0.18), width: 1.5),
+                          top: BorderSide(color: Colors.white.withOpacity(1.0), width: 1.5),
+                          left: BorderSide(color: Colors.white.withOpacity(0.7), width: 1.0),
+                          right: BorderSide(color: Colors.white.withOpacity(0.7), width: 1.0),
+                          bottom: BorderSide(color: Colors.black.withOpacity(0.15), width: 1.5), // Bottom refraction simulating thickness
                         ),
-                      ),
-                    ),
-                    // Thin white border 1px
-                    Container(
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(34),
-                        border: Border.all(color: Colors.white.withOpacity(0.35), width: 1),
                       ),
                     ),
                     // Content
