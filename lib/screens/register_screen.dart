@@ -67,7 +67,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
     if (result.containsKey('error')) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(result['error'] ?? 'Đăng ký thất bại')),
+        SnackBar(content: Text((result['error'] ?? 'Đăng ký thất bại').toString())),
       );
     } else {
       if (!mounted) return;
@@ -113,11 +113,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
         final result = await ApiService.googleLogin(idToken);
         if (result.containsKey('error')) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(result['error'] ?? 'Đăng nhập Google thất bại')),
+            SnackBar(content: Text((result['error'] ?? 'Đăng nhập Google thất bại').toString())),
           );
         } else {
           if (result['token'] != null) {
-            await ApiService.saveToken(result['token']);
+            await ApiService.saveToken(result['token'].toString());
           }
           if (!mounted) return;
           Navigator.pushAndRemoveUntil(

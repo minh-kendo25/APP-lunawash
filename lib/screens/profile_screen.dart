@@ -44,13 +44,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
       if (mounted) {
         setState(() {
           if (!profile.containsKey('error')) {
-            _fullName = profile['fullName'] ?? '';
-            _email = profile['email'] ?? '';
-            _phone = profile['phone'] ?? '';
-            _address = profile['address'] ?? 'Chưa cập nhật';
+            _fullName = (profile['fullName'] ?? '').toString();
+            _email = (profile['email'] ?? '').toString();
+            _phone = (profile['phone'] ?? '').toString();
+            _address = (profile['address'] ?? 'Chưa cập nhật').toString();
             if (_address.isEmpty) _address = 'Chưa cập nhật';
-            _points = profile['loyalty']?['currentPoints'] ?? 0;
-            _tierName = profile['loyalty']?['tierName'] ?? 'ĐỒNG';
+            _points = (profile['loyalty']?['currentPoints'] as num?)?.toInt() ?? 0;
+            _tierName = (profile['loyalty']?['tierName'] ?? 'ĐỒNG').toString();
           }
           _cars = vehicles;
           _membershipTiers = tiers;
@@ -263,10 +263,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Widget _buildCarCard(dynamic car) {
-    String name = car['name'] ?? car['Name'] ?? car['vehicleModel'] ?? car['make'] ?? '';
-    String license = car['license'] ?? car['License'] ?? car['licensePlate'] ?? 'Chưa có biển số';
-    String color = car['color'] ?? car['Color'] ?? '';
-    String typeName = car['vehicleTypeName'] ?? car['VehicleTypeName'] ?? '';
+    String name = (car['name'] ?? car['Name'] ?? car['vehicleModel'] ?? car['make'] ?? '').toString();
+    String license = (car['license'] ?? car['License'] ?? car['licensePlate'] ?? 'Chưa có biển số').toString();
+    String color = (car['color'] ?? car['Color'] ?? '').toString();
+    String typeName = (car['vehicleTypeName'] ?? car['VehicleTypeName'] ?? '').toString();
 
     String subtitle = typeName;
     if (color.isNotEmpty) subtitle += (subtitle.isNotEmpty ? ' - ' : '') + color;
@@ -309,7 +309,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       var carId = car['id'] ?? car['Id'];
                       if (carId != null) {
                         setState(() => _isLoading = true);
-                        await ApiService.deleteVehicle(carId);
+                        await ApiService.deleteVehicle(carId.toString());
                         _loadData();
                       }
                     },
@@ -611,8 +611,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 const Divider(height: 1, thickness: 1, color: Color(0xFFF3F4F6)),
                 _buildTableRow('PLATINUM', 'Từ 5.000 pt'),
               ] else ..._membershipTiers.map((tier) {
-                final String name = (tier['tierName'] ?? '').toString().toUpperCase();
-                final int points = tier['minPoints'] ?? 0;
+                final String name = ((tier['tierName'] ?? '').toString().toUpperCase()).toString();
+                final int points = (tier['minPoints'] as num?)?.toInt() ?? 0;
                 final String condition = points <= 0 ? 'Mặc định' : 'Từ ${NumberFormat.decimalPattern('vi_VN').format(points)} pt';
                 return Column(
                   children: [

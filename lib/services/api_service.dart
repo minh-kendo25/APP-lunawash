@@ -15,7 +15,7 @@ class ApiService {
     try {
       final response = await http.get(Uri.parse('$baseUrl/services'));
       if (response.statusCode == 200) {
-        return json.decode(response.body);
+        return json.decode(response.body) as List<dynamic>;
       } else {
         throw Exception('Failed to load services: ${response.statusCode}');
       }
@@ -102,7 +102,7 @@ class ApiService {
       );
       
       if (response.statusCode == 200) {
-        return json.decode(response.body);
+        return json.decode(response.body) as List<dynamic>;
       }
       return [];
     } catch (e) {
@@ -122,7 +122,7 @@ class ApiService {
         },
       );
       if (response.statusCode == 200) {
-        return json.decode(response.body);
+        return json.decode(response.body) as List<dynamic>;
       }
       return [];
     } catch (e) {
@@ -141,7 +141,7 @@ class ApiService {
       });
       
       if (response.statusCode == 200) {
-        return json.decode(response.body);
+        return json.decode(response.body) as Map<String, dynamic>;
       } else {
         return {'error': 'Login failed: ${response.statusCode}'};
       }
@@ -159,7 +159,7 @@ class ApiService {
       );
       
       if (response.statusCode == 200) {
-        return json.decode(response.body);
+        return json.decode(response.body) as Map<String, dynamic>;
       } else {
         try {
           final errData = json.decode(response.body);
@@ -187,7 +187,7 @@ class ApiService {
       );
       
       if (response.statusCode == 200) {
-        return json.decode(response.body);
+        return json.decode(response.body) as Map<String, dynamic>;
       } else {
         return {'error': 'Registration failed: ${response.statusCode}'};
       }
@@ -228,7 +228,7 @@ class ApiService {
       );
       
       if (response.statusCode == 200) {
-        return json.decode(response.body);
+        return json.decode(response.body) as Map<String, dynamic>;
       } else {
         return {'error': 'Failed to fetch profile'};
       }
@@ -257,7 +257,7 @@ class ApiService {
       );
 
       if (response.statusCode == 200) {
-        return json.decode(response.body);
+        return json.decode(response.body) as Map<String, dynamic>;
       } else {
         return {'error': 'Cập nhật thất bại: ${response.statusCode}'};
       }
@@ -281,7 +281,7 @@ class ApiService {
       );
       
       if (response.statusCode == 200) {
-        return json.decode(response.body);
+        return json.decode(response.body) as List<dynamic>;
       }
       return [];
     } catch (e) {
@@ -310,7 +310,7 @@ class ApiService {
       );
 
       if (response.statusCode == 200) {
-        return json.decode(response.body);
+        return json.decode(response.body) as Map<String, dynamic>;
       } else {
         return {'error': 'Thêm xe thất bại: ${response.statusCode}'};
       }
@@ -334,7 +334,7 @@ class ApiService {
       );
 
       if (response.statusCode == 200) {
-        return json.decode(response.body);
+        return json.decode(response.body) as Map<String, dynamic>;
       } else {
         return {'error': 'Xóa xe thất bại: ${response.statusCode}'};
       }
@@ -358,7 +358,7 @@ class ApiService {
       );
       
       if (response.statusCode == 200) {
-        return json.decode(response.body);
+        return json.decode(response.body) as List<dynamic>;
       }
       return [];
     } catch (e) {
@@ -462,7 +462,7 @@ class ApiService {
       );
 
       if (response.statusCode == 200) {
-        return json.decode(response.body);
+        return json.decode(response.body) as Map<String, dynamic>?;
       }
       return null;
     } catch (e) {
@@ -509,7 +509,7 @@ class ApiService {
       );
 
       if (response.statusCode == 200) {
-        return json.decode(response.body);
+        return json.decode(response.body) as List<dynamic>;
       }
       return [];
     } catch (e) {

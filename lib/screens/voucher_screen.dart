@@ -115,7 +115,7 @@ class _VoucherScreenState extends State<VoucherScreen> {
         'Không rõ mã';
     final desc = voucher['description'] ?? rawData['subtitle'] ?? '';
 
-    String subtitle = desc;
+    String subtitle = desc.toString();
     if (voucher['expiryDate'] != null) {
       try {
         final DateTime expiry = DateTime.parse(voucher['expiryDate']).toLocal();
