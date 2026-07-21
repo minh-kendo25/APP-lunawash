@@ -150,15 +150,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       ),
                     ],
                   ),
-                  OutlinedButton(
-                    onPressed: () {},
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: const Color(0xFF4EE1F1),
-                      side: const BorderSide(color: Color(0xFF4EE1F1)),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                    ),
-                    child: const Text('Đổi quà', style: TextStyle(fontWeight: FontWeight.bold)),
-                  )
+
                 ],
               ),
             ),

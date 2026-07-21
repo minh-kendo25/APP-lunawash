@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
+import 'dart:ui';
 import 'home_screen.dart';
 import 'booking_screen.dart';
 import 'history_screen.dart';
 import 'support_screen.dart';
 import 'login_screen.dart';
 import 'profile_screen.dart';
+import '../services/api_service.dart';
 
 class MainLayout extends StatefulWidget {
   final int initialIndex;
@@ -92,55 +94,70 @@ class _MainLayoutState extends State<MainLayout> {
         ],
       ),
       drawer: _buildDrawer(context),
+      extendBody: true,
       body: _screens[_currentIndex],
-      bottomNavigationBar: Container(
-        decoration: BoxDecoration(
-          color: Colors.white,
-          border: Border(top: BorderSide(color: Colors.grey.shade200, width: 1)),
-        ),
-        child: NavigationBarTheme(
-          data: NavigationBarThemeData(
-            indicatorColor: Colors.grey.shade300,
-            labelTextStyle: MaterialStateProperty.resolveWith((states) {
-              if (states.contains(MaterialState.selected)) {
-                return const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.black);
-              }
-              return const TextStyle(fontSize: 12, fontWeight: FontWeight.normal, color: Colors.black54);
-            }),
-            iconTheme: MaterialStateProperty.resolveWith((states) {
-              if (states.contains(MaterialState.selected)) {
-                return const IconThemeData(color: Colors.black);
-              }
-              return const IconThemeData(color: Colors.black54);
-            }),
-          ),
-          child: NavigationBar(
-            selectedIndex: _currentIndex,
-            onDestinationSelected: _onTabTapped,
-            backgroundColor: Colors.white,
-            elevation: 0,
-            destinations: const [
-              NavigationDestination(
-                icon: Icon(Icons.home_outlined),
-                selectedIcon: Icon(Icons.home),
-                label: 'Home',
+      bottomNavigationBar: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(40),
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: Colors.black.withOpacity(0.75),
+                  borderRadius: BorderRadius.circular(40),
+                  border: Border.all(color: Colors.white.withOpacity(0.15)),
+                ),
+                child: NavigationBarTheme(
+                  data: NavigationBarThemeData(
+                    indicatorColor: Colors.white.withOpacity(0.2),
+                    labelTextStyle: MaterialStateProperty.resolveWith((states) {
+                      if (states.contains(MaterialState.selected)) {
+                        return const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.white);
+                      }
+                      return const TextStyle(fontSize: 11, fontWeight: FontWeight.normal, color: Colors.white54);
+                    }),
+                    iconTheme: MaterialStateProperty.resolveWith((states) {
+                      if (states.contains(MaterialState.selected)) {
+                        return const IconThemeData(color: Colors.white, size: 26);
+                      }
+                      return const IconThemeData(color: Colors.white54, size: 24);
+                    }),
+                  ),
+                  child: NavigationBar(
+                    selectedIndex: _currentIndex,
+                    onDestinationSelected: _onTabTapped,
+                    backgroundColor: Colors.transparent,
+                    elevation: 0,
+                    height: 65,
+                    labelBehavior: NavigationDestinationLabelBehavior.alwaysHide,
+                    destinations: const [
+                      NavigationDestination(
+                        icon: Icon(Icons.home_outlined),
+                        selectedIcon: Icon(Icons.home),
+                        label: 'Home',
+                      ),
+                      NavigationDestination(
+                        icon: Icon(Icons.calendar_month_outlined),
+                        selectedIcon: Icon(Icons.calendar_month),
+                        label: 'Lịch hẹn',
+                      ),
+                      NavigationDestination(
+                        icon: Icon(Icons.history_outlined),
+                        selectedIcon: Icon(Icons.history),
+                        label: 'Lịch sử',
+                      ),
+                      NavigationDestination(
+                        icon: Icon(Icons.support_agent_outlined),
+                        selectedIcon: Icon(Icons.support_agent),
+                        label: 'Hỗ trợ',
+                      ),
+                    ],
+                  ),
+                ),
               ),
-              NavigationDestination(
-                icon: Icon(Icons.calendar_month_outlined),
-                selectedIcon: Icon(Icons.calendar_month),
-                label: 'Đặt lịch',
-              ),
-              NavigationDestination(
-                icon: Icon(Icons.history_outlined),
-                selectedIcon: Icon(Icons.history),
-                label: 'Lịch sử',
-              ),
-              NavigationDestination(
-                icon: Icon(Icons.help_outline),
-                selectedIcon: Icon(Icons.help),
-                label: 'Hỗ trợ',
-              ),
-            ],
+            ),
           ),
         ),
       ),
@@ -200,7 +217,9 @@ class _MainLayoutState extends State<MainLayout> {
                 ListTile(
                   leading: const Icon(Icons.logout, color: Colors.red),
                   title: const Text('Đăng xuất', style: TextStyle(fontWeight: FontWeight.w600, color: Colors.red)),
-                  onTap: () {
+                  onTap: () async {
+                    await ApiService.logout();
+                    if (!context.mounted) return;
                     Navigator.pushAndRemoveUntil(
                       context,
                       MaterialPageRoute(builder: (context) => const LoginScreen()),
