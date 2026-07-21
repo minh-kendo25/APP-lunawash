@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'dart:async';
 import '../services/api_service.dart';
 
 class HistoryScreen extends StatefulWidget {
@@ -8,16 +9,42 @@ class HistoryScreen extends StatefulWidget {
   State<HistoryScreen> createState() => _HistoryScreenState();
 }
 
-class _HistoryScreenState extends State<HistoryScreen> {
+class _HistoryScreenState extends State<HistoryScreen> with WidgetsBindingObserver {
   bool _isLoading = true;
   List<dynamic> _ongoingBookings = [];
   List<dynamic> _pastBookings = [];
   int _displayedPastCount = 5;
+  Timer? _timer;
+  bool _isAppActive = true;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _loadHistory();
+    // Eco-Mode Polling
+    _timer = Timer.periodic(const Duration(seconds: 15), (timer) {
+      if (_isAppActive) {
+        _loadHistory();
+      }
+    });
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _isAppActive = true;
+      _loadHistory();
+    } else {
+      _isAppActive = false;
+    }
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _timer?.cancel();
+    super.dispose();
   }
 
   Future<void> _loadHistory() async {
@@ -277,6 +304,51 @@ class _HistoryScreenState extends State<HistoryScreen> {
                       ),
                     ],
                   ),
+                  if (booking['isStartRequested'] == true && booking['customerConfirmedReady'] != true) ...[
+                    const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 16),
+                      child: Divider(height: 1, color: Color(0xFFF1F5F9)),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.amber.shade50,
+                        border: Border.all(color: Colors.amber.shade200),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Column(
+                        children: [
+                          const Text('👋 Nhân viên đã sẵn sàng! Vui lòng xác nhận xe của bạn đã vào đúng trạm.', style: TextStyle(color: Colors.brown, fontSize: 13, fontWeight: FontWeight.bold), textAlign: TextAlign.center),
+                          const SizedBox(height: 12),
+                          SizedBox(
+                            width: double.infinity,
+                            child: ElevatedButton.icon(
+                              onPressed: () async {
+                                showDialog(
+                                  context: context,
+                                  barrierDismissible: false,
+                                  builder: (c) => const Center(child: CircularProgressIndicator()),
+                                );
+                                final success = await ApiService.confirmReadyBooking(booking['id'].toString());
+                                if (context.mounted) {
+                                  Navigator.pop(context); // Tắt loading
+                                  if (success) {
+                                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Đã xác nhận thành công!'), backgroundColor: Colors.teal));
+                                    _loadHistory();
+                                  } else {
+                                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Lỗi kết nối. Vui lòng thử lại!'), backgroundColor: Colors.red));
+                                  }
+                                }
+                              },
+                              style: ElevatedButton.styleFrom(backgroundColor: Colors.amber.shade600, padding: const EdgeInsets.symmetric(vertical: 12), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8))),
+                              icon: const Icon(Icons.check_circle, color: Colors.white),
+                              label: const Text('Xác nhận đã vào trạm', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                   if (canCancel) ...[
                     const Padding(
                       padding: EdgeInsets.symmetric(vertical: 16),

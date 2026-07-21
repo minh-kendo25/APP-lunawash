@@ -365,6 +365,23 @@ class ApiService {
       return [];
     }
   }
+  // Xác nhận đã vào trạm
+  static Future<bool> confirmReadyBooking(String bookingId) async {
+    try {
+      final token = await getToken();
+      if (token == null) return false;
+
+      final response = await http.put(
+        Uri.parse('$baseUrl/bookings/$bookingId/confirm-ready'),
+        headers: {
+          'Authorization': 'Bearer $token',
+        },
+      );
+      return response.statusCode == 200 || response.statusCode == 204;
+    } catch (e) {
+      return false;
+    }
+  }
 
   // Hủy lịch đặt
   static Future<bool> cancelBooking(String bookingId) async {
