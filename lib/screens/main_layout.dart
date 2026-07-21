@@ -94,121 +94,56 @@ class _MainLayoutState extends State<MainLayout> {
         ],
       ),
       drawer: _buildDrawer(context),
-      extendBody: true,
+      extendBody: false,
       body: _screens[_currentIndex],
-      bottomNavigationBar: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-          child: Container(
-            height: 65,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(34),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.12),
-                  blurRadius: 20,
-                  offset: const Offset(0, 10),
-                ),
-              ],
-            ),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(34),
-              child: BackdropFilter(
-                filter: ImageFilter.blur(sigmaX: 30, sigmaY: 30),
-                child: Stack(
-                  children: [
-                    // Base Glass
-                    Container(
-                      decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.1),
-                      ),
-                    ),
-                    
-                    // Specular Highlight (Water drop top glow)
-                    Positioned(
-                      top: -20,
-                      left: 40,
-                      right: 40,
-                      height: 40,
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.8),
-                          borderRadius: BorderRadius.circular(50),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.white.withOpacity(0.8),
-                              blurRadius: 20,
-                              spreadRadius: 5,
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-
-                    // Top Highlight Edge & Bottom Refraction
-                    Container(
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(34),
-                        border: Border(
-                          top: BorderSide(color: Colors.white.withOpacity(1.0), width: 1.5),
-                          left: BorderSide(color: Colors.white.withOpacity(0.7), width: 1.0),
-                          right: BorderSide(color: Colors.white.withOpacity(0.7), width: 1.0),
-                          bottom: BorderSide(color: Colors.black.withOpacity(0.15), width: 1.5), // Bottom refraction simulating thickness
-                        ),
-                      ),
-                    ),
-                    // Content
-                    NavigationBarTheme(
-                      data: NavigationBarThemeData(
-                        indicatorColor: Colors.transparent,
-                        labelTextStyle: MaterialStateProperty.resolveWith((states) {
-                          if (states.contains(MaterialState.selected)) {
-                            return const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF0F2050));
-                          }
-                          return TextStyle(fontSize: 11, fontWeight: FontWeight.normal, color: const Color(0xFF0F2050).withOpacity(0.5));
-                        }),
-                        iconTheme: MaterialStateProperty.resolveWith((states) {
-                          if (states.contains(MaterialState.selected)) {
-                            return const IconThemeData(color: Color(0xFF0F2050), size: 28);
-                          }
-                          return IconThemeData(color: const Color(0xFF0F2050).withOpacity(0.5), size: 26);
-                        }),
-                      ),
-                      child: NavigationBar(
-                        selectedIndex: _currentIndex,
-                        onDestinationSelected: _onTabTapped,
-                        backgroundColor: Colors.transparent,
-                        elevation: 0,
-                        height: 65,
-                        labelBehavior: NavigationDestinationLabelBehavior.alwaysHide,
-                        destinations: const [
-                          NavigationDestination(
-                            icon: Icon(Icons.home_outlined),
-                            selectedIcon: Icon(Icons.home),
-                            label: 'Home',
-                          ),
-                          NavigationDestination(
-                            icon: Icon(Icons.calendar_month_outlined),
-                            selectedIcon: Icon(Icons.calendar_month),
-                            label: 'Lịch hẹn',
-                          ),
-                          NavigationDestination(
-                            icon: Icon(Icons.history_outlined),
-                            selectedIcon: Icon(Icons.history),
-                            label: 'Lịch sử',
-                          ),
-                          NavigationDestination(
-                            icon: Icon(Icons.support_agent_outlined),
-                            selectedIcon: Icon(Icons.support_agent),
-                            label: 'Hỗ trợ',
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
+      bottomNavigationBar: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          border: Border(top: BorderSide(color: Colors.grey.shade200, width: 1)),
+        ),
+        child: NavigationBarTheme(
+          data: NavigationBarThemeData(
+            indicatorColor: Colors.grey.shade300,
+            labelTextStyle: MaterialStateProperty.resolveWith((states) {
+              if (states.contains(MaterialState.selected)) {
+                return const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.black);
+              }
+              return const TextStyle(fontSize: 12, fontWeight: FontWeight.normal, color: Colors.black54);
+            }),
+            iconTheme: MaterialStateProperty.resolveWith((states) {
+              if (states.contains(MaterialState.selected)) {
+                return const IconThemeData(color: Colors.black);
+              }
+              return const IconThemeData(color: Colors.black54);
+            }),
+          ),
+          child: NavigationBar(
+            selectedIndex: _currentIndex,
+            onDestinationSelected: _onTabTapped,
+            backgroundColor: Colors.white,
+            elevation: 0,
+            destinations: const [
+              NavigationDestination(
+                icon: Icon(Icons.home_outlined),
+                selectedIcon: Icon(Icons.home),
+                label: 'Home',
               ),
-            ),
+              NavigationDestination(
+                icon: Icon(Icons.calendar_month_outlined),
+                selectedIcon: Icon(Icons.calendar_month),
+                label: 'Lịch hẹn',
+              ),
+              NavigationDestination(
+                icon: Icon(Icons.history_outlined),
+                selectedIcon: Icon(Icons.history),
+                label: 'Lịch sử',
+              ),
+              NavigationDestination(
+                icon: Icon(Icons.support_agent_outlined),
+                selectedIcon: Icon(Icons.support_agent),
+                label: 'Hỗ trợ',
+              ),
+            ],
           ),
         ),
       ),
