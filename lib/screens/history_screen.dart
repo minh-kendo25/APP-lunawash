@@ -53,10 +53,10 @@ class _HistoryScreenState extends State<HistoryScreen> with WidgetsBindingObserv
       if (mounted) {
         setState(() {
           _ongoingBookings = bookings.where((b) => 
-            b['status'] != 'Hoàn thành' && b['status'] != 'Đã hủy'
+            b['status'] != 'Hoàn thành' && b['status'] != 'Đã hủy' && b['status'] != 'Hủy vì quá hạn chờ'
           ).toList();
           _pastBookings = bookings.where((b) => 
-            b['status'] == 'Hoàn thành' || b['status'] == 'Đã hủy'
+            b['status'] == 'Hoàn thành' || b['status'] == 'Đã hủy' || b['status'] == 'Hủy vì quá hạn chờ'
           ).toList();
           _isLoading = false;
         });
@@ -142,8 +142,8 @@ class _HistoryScreenState extends State<HistoryScreen> with WidgetsBindingObserv
                       final date = b['bookingDate']?.toString().substring(0, 10) ?? '';
                       final price = b['totalPrice']?.toString() ?? '0đ';
                       final status = (b['status'] ?? '').toString().toUpperCase();
-                      final color = status == 'CANCELLED' || status == 'ĐÃ HỦY' ? Colors.grey : Colors.teal;
-                      final isCancelled = status == 'CANCELLED' || status == 'ĐÃ HỦY';
+                      final color = status == 'CANCELLED' || status == 'ĐÃ HỦY' || status == 'HỦY VÌ QUÁ HẠN CHỜ' ? Colors.grey : Colors.teal;
+                      final isCancelled = status == 'CANCELLED' || status == 'ĐÃ HỦY' || status == 'HỦY VÌ QUÁ HẠN CHỜ';
                       final branch = b['branchInfo'] ?? '';
                       final time = b['timeRange'] ?? '';
                       final bookingId = b['id']?.toString() ?? '';
