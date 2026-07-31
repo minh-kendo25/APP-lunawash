@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import '../widgets/auth_background.dart';
+import '../services/api_service.dart';
+import 'reset_password_screen.dart';
 
 class ForgotPasswordScreen extends StatefulWidget {
   const ForgotPasswordScreen({super.key});
@@ -18,7 +20,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
     super.dispose();
   }
 
-  void _submit() {
+  void _submit() async {
     final email = _emailController.text.trim();
     if (email.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -31,18 +33,29 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
       _isLoading = true;
     });
 
-    // Simulate API Call
-    Future.delayed(const Duration(seconds: 2), () {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
+    final result = await ApiService.forgotPassword(email);
+
+    if (mounted) {
+      setState(() {
+        _isLoading = false;
+      });
+
+      if (result.containsKey('error')) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Đã gửi liên kết khôi phục mật khẩu vào email của bạn!')),
+          SnackBar(content: Text(result['error']), backgroundColor: Colors.red),
         );
-        Navigator.pop(context);
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Đã gửi mã OTP vào email của bạn!'), backgroundColor: Colors.green),
+        );
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => ResetPasswordScreen(email: email),
+          ),
+        );
       }
-    });
+    }
   }
 
   @override

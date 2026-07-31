@@ -131,6 +131,46 @@ class ApiService {
     }
   }
 
+  static Future<Map<String, dynamic>> forgotPassword(String email) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/auth/forgot-password'),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({'email': email}),
+      );
+      if (response.statusCode == 200) {
+        return json.decode(response.body);
+      } else {
+        final errData = json.decode(response.body);
+        return {'error': errData['message'] ?? 'Forgot password failed'};
+      }
+    } catch (e) {
+      return {'error': 'Network error: $e'};
+    }
+  }
+
+  static Future<Map<String, dynamic>> resetPassword(String email, String otp, String newPassword) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/auth/reset-password'),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({
+          'email': email,
+          'otp': otp,
+          'newPassword': newPassword
+        }),
+      );
+      if (response.statusCode == 200) {
+        return json.decode(response.body);
+      } else {
+        final errData = json.decode(response.body);
+        return {'error': errData['message'] ?? 'Reset password failed'};
+      }
+    } catch (e) {
+      return {'error': 'Network error: $e'};
+    }
+  }
+
   static Future<Map<String, dynamic>> login(String email, String password) async {
     try {
       final response = await http.post(
