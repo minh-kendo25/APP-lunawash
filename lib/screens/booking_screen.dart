@@ -40,6 +40,10 @@ class _BookingScreenState extends State<BookingScreen> {
   bool _isLoadingServices = true;
   bool _isFindingLocation = false;
 
+  List<dynamic> _membershipTiers = [];
+  Map<String, dynamic>? _userTierObj;
+  String _userTierName = 'Member';
+
   @override
   void initState() {
     super.initState();
@@ -47,6 +51,46 @@ class _BookingScreenState extends State<BookingScreen> {
     _loadVehicles();
     _fetchOccupiedSlots();
     _fetchServices();
+    _fetchMembershipTiers();
+  }
+
+  Future<void> _fetchMembershipTiers() async {
+    try {
+      final tiers = await ApiService.getMembershipSettings();
+      final profileResponse = await ApiService.getUserProfile();
+      
+      if (mounted) {
+        setState(() {
+          _membershipTiers = tiers;
+          if (profileResponse != null && profileResponse['error'] == null) {
+            String checkTier = (profileResponse['tier'] ?? 'Member').toString().toLowerCase();
+            
+            // Ánh xạ lại role sang tier nếu tier bị null nhưng role có (vd: member -> Member)
+            if (profileResponse['role'] != null && checkTier == 'member') {
+               checkTier = profileResponse['role'].toString().toLowerCase();
+            }
+
+            // Tìm khớp tier
+            final match = _membershipTiers.firstWhere((t) {
+              final tName = t['tierName'].toString().toLowerCase();
+              if (tName == checkTier) return true;
+              if (tName == 'member' && (checkTier.contains('đồng') || checkTier.contains('member'))) return true;
+              if (tName == 'silver' && (checkTier.contains('bạc') || checkTier.contains('silver'))) return true;
+              if (tName == 'gold' && (checkTier.contains('vàng') || checkTier.contains('gold'))) return true;
+              if (tName == 'platinum' && (checkTier.contains('bạch kim') || checkTier.contains('platinum'))) return true;
+              return false;
+            }, orElse: () => null);
+
+            if (match != null) {
+              _userTierObj = match;
+              _userTierName = match['tierName'];
+            }
+          }
+        });
+      }
+    } catch (e) {
+      print('Error fetching membership settings: $e');
+    }
   }
 
   Future<void> _fetchServices() async {
@@ -457,11 +501,11 @@ class _BookingScreenState extends State<BookingScreen> {
               children: [
                 _buildStepItem('1', 'Chi nhánh', _currentStep >= 1),
                 _buildStepLine(_currentStep >= 2),
-                _buildStepItem('2', 'Trạm', _currentStep >= 2),
+                _buildStepItem('2', 'Dịch vụ', _currentStep >= 2),
                 _buildStepLine(_currentStep >= 3),
-                _buildStepItem('3', 'Dịch vụ', _currentStep >= 3),
+                _buildStepItem('3', 'Phương tiện', _currentStep >= 3),
                 _buildStepLine(_currentStep >= 4),
-                _buildStepItem('4', 'Thời gian', _currentStep >= 4),
+                _buildStepItem('4', 'Trạm và thời gian', _currentStep >= 4),
               ],
             ),
           ),
@@ -1722,8 +1766,29 @@ class _BookingScreenState extends State<BookingScreen> {
                         const SizedBox(width: 12),
                         Expanded(
                           child: GestureDetector(
-                            onTap: () =>
-                                setModalState(() => _paymentMethod = 'cash'),
+                              onTap: () {
+                                // Kiểm tra hạng thành viên khi chọn Tiền mặt
+                                if (_membershipTiers.isNotEmpty && _userTierObj != null) {
+                                  // Yêu cầu hạng Silver (id = 'TIER-02') hoặc hạng có minPoints >= 500?
+                                  // Ta tìm hạng có tên là Silver
+                                  final requiredTier = _membershipTiers.firstWhere(
+                                      (t) => t['tierName'].toString().toLowerCase() == 'silver',
+                                      orElse: () => null);
+                                  
+                                  if (requiredTier != null) {
+                                    if ((_userTierObj!['minPoints'] ?? 0) < (requiredTier['minPoints'] ?? 0)) {
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        SnackBar(
+                                          content: Text('Hạng của bạn không hỗ trợ thanh toán tiền mặt (Yêu cầu từ hạng ${requiredTier['tierName']} trở lên). Vui lòng chọn VNPay!'),
+                                          backgroundColor: Colors.red,
+                                        ),
+                                      );
+                                      return; // Chặn không cho chọn Cash
+                                    }
+                                  }
+                                }
+                                setModalState(() => _paymentMethod = 'cash');
+                              },
                             child: Container(
                               padding: const EdgeInsets.symmetric(vertical: 12),
                               decoration: BoxDecoration(

@@ -302,9 +302,15 @@ class _HistoryScreenState extends State<HistoryScreen> with WidgetsBindingObserv
                           ],
                         ),
                       ),
-                    ],
-                  ),
-                  if (booking['isStartRequested'] == true && booking['customerConfirmedReady'] != true) ...[
+                      ],
+                    ),
+                  Builder(builder: (context) {
+                    final bool isStart = booking['isStartRequested'] == true || booking['isStartRequested']?.toString().toLowerCase() == 'true';
+                    final bool isConfirmed = booking['customerConfirmedReady'] == true || booking['customerConfirmedReady']?.toString().toLowerCase() == 'true';
+                    
+                    if (isStart && !isConfirmed) {
+                      return Column(
+                        children: [
                     const Padding(
                       padding: EdgeInsets.symmetric(vertical: 16),
                       child: Divider(height: 1, color: Color(0xFFF1F5F9)),
@@ -348,7 +354,11 @@ class _HistoryScreenState extends State<HistoryScreen> with WidgetsBindingObserv
                         ],
                       ),
                     ),
-                  ],
+                        ],
+                      );
+                    }
+                    return const SizedBox.shrink();
+                  }),
                   if (canCancel) ...[
                     const Padding(
                       padding: EdgeInsets.symmetric(vertical: 16),

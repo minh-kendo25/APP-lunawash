@@ -265,7 +265,7 @@ class _AIChatBottomSheetState extends State<_AIChatBottomSheet> {
       _scrollToBottom();
     } catch (e) {
       setState(() {
-        _messages.add({'isUser': false, 'text': 'Xin lỗi, đã có lỗi xảy ra. Vui lòng thử lại sau.'});
+        _messages.add({'isUser': false, 'text': 'Xin lỗi, đã có lỗi xảy ra: $e'});
         _isLoading = false;
       });
       _scrollToBottom();

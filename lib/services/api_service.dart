@@ -3,6 +3,7 @@ import 'dart:io' show Platform;
 import 'package:http/http.dart' as http;
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 
 class ApiService {
   // Tự động nhận diện nền tảng để trỏ đúng IP của Backend
@@ -207,10 +208,20 @@ class ApiService {
     return prefs.getString('jwt_token');
   }
 
-  // Đăng xuất (xóa token)
+  // [Bình thường] Đăng xuất (xóa token và cache)
   static Future<void> logout() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.remove('jwt_token');
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.clear(); // Xóa sạch token và toàn bộ local data
+      
+      // Đảm bảo ngắt kết nối Google Sign In để không tự động login lại ngầm
+      final googleSignIn = GoogleSignIn();
+      if (await googleSignIn.isSignedIn()) {
+        await googleSignIn.signOut();
+      }
+    } catch (e) {
+      print('Logout error: $e');
+    }
   }
 
   // Lấy User Profile
