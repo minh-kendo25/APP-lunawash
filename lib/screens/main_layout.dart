@@ -255,7 +255,7 @@ class _MainLayoutState extends State<MainLayout> {
           children: [
             Text('Tên ứng dụng: LunaWash', style: TextStyle(fontWeight: FontWeight.bold)),
             SizedBox(height: 8),
-            Text('Phiên bản: 1.4.0 (Build 42)'),
+            Text('Phiên bản: 1.4.1 (Build 43)'),
             SizedBox(height: 8),
             Text('Môi trường: Production'),
             SizedBox(height: 8),
