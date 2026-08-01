@@ -2842,6 +2842,7 @@ class _VnPayDialog extends StatefulWidget {
 class _VnPayDialogState extends State<_VnPayDialog> {
   Timer? _timer;
   bool _isChecking = false;
+  bool _isSuccess = false;
 
   @override
   void initState() {
@@ -2858,6 +2859,7 @@ class _VnPayDialogState extends State<_VnPayDialog> {
         if (booking != null) {
           final status = booking['status'];
           if (status == 'Confirmed' || status == 'Paid') {
+            _isSuccess = true;
             timer.cancel();
             if (mounted) {
               Navigator.pop(context);
@@ -2882,6 +2884,9 @@ class _VnPayDialogState extends State<_VnPayDialog> {
   @override
   void dispose() {
     _timer?.cancel();
+    if (!_isSuccess) {
+      ApiService.hardDeleteBooking(widget.bookingId);
+    }
     super.dispose();
   }
 

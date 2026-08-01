@@ -53,7 +53,7 @@ class _HistoryScreenState extends State<HistoryScreen> with WidgetsBindingObserv
       if (mounted) {
         setState(() {
           _ongoingBookings = bookings.where((b) => 
-            b['status'] != 'Hoàn thành' && b['status'] != 'Đã hủy' && b['status'] != 'Hủy vì quá hạn chờ'
+            b['status'] != 'Hoàn thành' && b['status'] != 'Đã hủy' && b['status'] != 'Hủy vì quá hạn chờ' && b['status'] != 'Pending'
           ).toList();
           _pastBookings = bookings.where((b) => 
             b['status'] == 'Hoàn thành' || b['status'] == 'Đã hủy' || b['status'] == 'Hủy vì quá hạn chờ'
