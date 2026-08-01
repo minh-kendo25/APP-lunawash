@@ -1,11 +1,13 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 
+import 'package:lunawash/services/api_service.dart';
+
 class GeminiService {
-  static const String _apiUrl = 'http://10.0.2.2:5010/api/AI/chat';
   static List<Map<String, dynamic>> _chatHistory = [];
 
   static Future<String> sendMessage(String message) async {
+    final String apiUrl = '${ApiService.baseUrl}/AI/chat';
     // Add user message to history
     _chatHistory.add({
       'role': 'user',
@@ -14,7 +16,7 @@ class GeminiService {
 
     try {
       final response = await http.post(
-        Uri.parse(_apiUrl),
+        Uri.parse(apiUrl),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
           'contents': _chatHistory
