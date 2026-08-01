@@ -139,7 +139,7 @@ class ApiService {
         body: json.encode({'email': email}),
       );
       if (response.statusCode == 200) {
-        return json.decode(response.body);
+        return json.decode(response.body) as Map<String, dynamic>;
       } else {
         final errData = json.decode(response.body);
         return {'error': errData['message'] ?? 'Forgot password failed'};
@@ -161,7 +161,7 @@ class ApiService {
         }),
       );
       if (response.statusCode == 200) {
-        return json.decode(response.body);
+        return json.decode(response.body) as Map<String, dynamic>;
       } else {
         final errData = json.decode(response.body);
         return {'error': errData['message'] ?? 'Reset password failed'};

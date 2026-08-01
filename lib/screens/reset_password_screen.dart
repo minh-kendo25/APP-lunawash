@@ -67,7 +67,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
 
       if (result.containsKey('error')) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(result['error']), backgroundColor: Colors.red),
+          SnackBar(content: Text(result['error'].toString()), backgroundColor: Colors.red),
         );
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
