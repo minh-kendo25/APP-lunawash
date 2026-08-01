@@ -597,4 +597,34 @@ class ApiService {
       return {'error': 'Lỗi mạng: $e'};
     }
   }
+  static Future<List<dynamic>> getMyNotifications() async {
+    try {
+      final token = await getToken();
+      if (token == null) return [];
+      final response = await http.get(
+        Uri.parse("$baseUrl/Notifications"),
+        headers: {'Authorization': 'Bearer $token'},
+      );
+      if (response.statusCode == 200) {
+        return json.decode(response.body) as List<dynamic>;
+      }
+      return [];
+    } catch (e) {
+      return [];
+    }
+  }
+
+  static Future<bool> markNotificationAsRead(String id) async {
+    try {
+      final token = await getToken();
+      if (token == null) return false;
+      final response = await http.put(
+        Uri.parse("$baseUrl/Notifications/$id/read"),
+        headers: {'Authorization': 'Bearer $token'},
+      );
+      return response.statusCode == 200;
+    } catch (e) {
+      return false;
+    }
+  }
 }

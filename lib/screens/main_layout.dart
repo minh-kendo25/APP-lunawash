@@ -5,6 +5,8 @@ import 'history_screen.dart';
 import 'support_screen.dart';
 import 'login_screen.dart';
 import 'profile_screen.dart';
+import 'dart:async';
+import 'notification_screen.dart';
 import '../services/api_service.dart';
 
 class MainLayout extends StatefulWidget {
@@ -18,11 +20,32 @@ class MainLayout extends StatefulWidget {
 
 class _MainLayoutState extends State<MainLayout> {
   late int _currentIndex;
+  int _unreadNotifs = 0;
+  Timer? _timer;
 
   @override
   void initState() {
     super.initState();
     _currentIndex = widget.initialIndex;
+    _loadUnreadNotifs();
+    _timer = Timer.periodic(const Duration(seconds: 15), (_) => _loadUnreadNotifs());
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  Future<void> _loadUnreadNotifs() async {
+    try {
+      final notifs = await ApiService.getMyNotifications();
+      if (mounted) {
+        setState(() {
+          _unreadNotifs = notifs.where((n) => n['isRead'] == false).length;
+        });
+      }
+    } catch (_) {}
   }
 
   late final List<Widget> _screens = [
