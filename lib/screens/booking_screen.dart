@@ -2064,7 +2064,7 @@ class _BookingScreenState extends State<BookingScreen> {
                                 .toIso8601String(),
                             "Duration": requiredSlots * 45,
                             "Notes": notesJson,
-                            "ServicePriceIds": serviceIds,
+                            "ServicePriceIds": serviceIds, "PromoCode": _selectedVoucher != null ? _selectedVoucher!['code'] : null, "TotalPrice": finalPrice,
                           };
 
                           // Show loading indicator
