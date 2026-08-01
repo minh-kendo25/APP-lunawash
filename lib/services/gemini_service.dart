@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 
-import 'package:lunawash/services/api_service.dart';
+import 'package:lunawash_app/services/api_service.dart';
 
 class GeminiService {
   static List<Map<String, dynamic>> _chatHistory = [];
